@@ -1,4 +1,4 @@
-package jkeystore.core;
+package jledger.core;
 
 public interface Key extends Iterable<String>, Comparable<Key> {
 

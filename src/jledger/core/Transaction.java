@@ -1,4 +1,4 @@
-package jkeystore.core;
+package jledger.core;
 
 /**
  * A transaction is a sequence of operations which modify a key-value store in

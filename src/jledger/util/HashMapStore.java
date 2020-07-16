@@ -1,11 +1,11 @@
-package jkeystore.util;
+package jledger.util;
 
 import java.util.HashMap;
 
-import jkeystore.core.Key;
-import jkeystore.core.Query;
-import jkeystore.core.Store;
-import jkeystore.core.Value;
+import jledger.core.Key;
+import jledger.core.Query;
+import jledger.core.Store;
+import jledger.core.Value;
 
 /**
  * A lightweight implementation of Store which is not effecient. In particular,
@@ -30,7 +30,7 @@ public class HashMapStore<K extends Key, V extends Value> extends HashMap<K, V> 
 	}
 
 	@Override
-	public Iterable<jkeystore.core.Store.Entry<K, V>> select(Query q) {
+	public Iterable<jledger.core.Store.Entry<K, V>> select(Query q) {
 		// This operation will be time linear in the number of elements in the hash map.
 		return null;
 	}

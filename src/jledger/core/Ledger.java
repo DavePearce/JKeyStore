@@ -1,7 +1,8 @@
-package jkeystore.core;
+package jledger.core;
 
 /**
- * Represents an immutable transaction ledger.
+ * Represents an immutable transaction ledger. That is a sequence of zero or
+ * more transactions which can be appended.
  *
  * @author David J. Pearce
  *

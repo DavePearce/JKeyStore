@@ -1,4 +1,4 @@
-package jkeystore.core;
+package jledger.core;
 
 public interface Store<K extends Key, V extends Value> {
 

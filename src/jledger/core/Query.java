@@ -1,4 +1,4 @@
-package jkeystore.core;
+package jledger.core;
 
 /**
  * A generic mechanism for identifying one or more keys.

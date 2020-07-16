@@ -1,9 +1,9 @@
-package jkeystore.util;
+package jledger.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import jkeystore.core.Value;
+import jledger.core.Value;
 
 public class ByteArrayValue implements Value {
 	protected byte[] bytes;
