@@ -1,5 +1,15 @@
 package jledger.core;
 
+/**
+ * Provides a convenient interface to a ledge which allows easy and efficient
+ * access to the key/value pairs stored within. In effect, it's a snapshot of
+ * the ledger at a given point.
+ * 
+ * @author David J. Pearce
+ *
+ * @param <K>
+ * @param <V>
+ */
 public interface Store<K extends Key, V extends Value> {
 
 	/**

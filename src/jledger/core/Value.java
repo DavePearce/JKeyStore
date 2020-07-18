@@ -3,9 +3,8 @@ package jledger.core;
 import java.io.InputStream;
 
 /**
- * Represents an immutable data blob which can be written into a key value
- * store. Values are immutable data structures which, when written, construct
- * new values.
+ * Represents an immutable data blob which can be written into a ledger. Values
+ * are immutable data structures which, when written, construct new values.
  *
  * @author David J. Pearce
  *
