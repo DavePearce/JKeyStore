@@ -11,15 +11,16 @@ package jledger.core;
  * @param <K>
  * @param <V>
  */
-public final class Transaction<K, V> implements Iterable<Operation<K, V>> {
-	private static final Transaction EMPTY = new Transaction();
+public final class Transaction<K, V> implements Iterable<Transaction.Operation<K, V>> {
+	@SuppressWarnings("rawtypes")
+	private static final Transaction EMPTY = new Transaction<>(null,null);
 	
 	private final Transaction<K,V> parent;
 	private final Operation<K,V> operation;
-	
-	private Transaction() {
-		this.parent = null;
-		this.operation = null;
+		
+	private Transaction(Transaction<K,V> parent, Operation<K,V> operation) {
+		this.parent = parent;
+		this.operation = operation;
 	}
 	
 	/**
@@ -33,15 +34,36 @@ public final class Transaction<K, V> implements Iterable<Operation<K, V>> {
 		} else {
 			return 1 + parent.size();
 		}
-	}
+	}	
 
+	@Override
+	public java.util.Iterator<Operation<K, V>> iterator() {
+		return new Iterator<>(this);
+	}
+	
+	public Transaction<K,V> assign(K target, V value) {
+		return new Transaction<>(this,new Operation.Assign<K,V>(target,value));
+	}
+	
+	public Transaction<K,V> copy(K source, K target) {
+		return new Transaction<>(this,new Operation.Copy<K,V>(source,target));
+	}
+	
+	public Transaction<K,V> move(K source, K target) {
+		return new Transaction<>(this,new Operation.Move<K,V>(source,target));
+	}
+	
+	public Transaction<K,V> delete(K target) {
+		return new Transaction<>(this,new Operation.Delete<K,V>(target));
+	}
+	
 	/**
 	 * Get the ith operation in this transaction.
 	 * @param i
 	 * @return
 	 */
 	public Operation<K,V> get(int i) {
-		throw new IllegalArgumentException("GPT HERE");
+		throw new IllegalArgumentException("GOT HERE");
 	}
 
 	/**
@@ -90,13 +112,21 @@ public final class Transaction<K, V> implements Iterable<Operation<K, V>> {
 		 * @param <K>
 		 * @param <V>
 		 */
-		public static final class Assign<K, V> implements Operation<K, V> {
+		public static final class Assign<K, V> extends Operation<K, V> {
+			private final V value;
+			
+			public Assign(K target, V value) {
+				super(target);
+				this.value = value;
+			}
 			/**
 			 * Get the value being assigned to the target key.
 			 *
 			 * @return
 			 */
-			public V getValue();
+			public V getValue() {
+				return value;
+			}
 		}
 
 		/**
@@ -109,8 +139,10 @@ public final class Transaction<K, V> implements Iterable<Operation<K, V>> {
 		 * @param <K>
 		 * @param <V>
 		 */
-		public static final class Delete<K, V> implements Operation<K, V> {
-
+		public static final class Delete<K, V> extends Operation<K, V> {
+			public Delete(K target) {
+				super(target);				
+			}
 		}
 		
 		/**
@@ -121,16 +153,25 @@ public final class Transaction<K, V> implements Iterable<Operation<K, V>> {
 		 * @param <K>
 		 * @param <V>
 		 */
-		public static final class Copy<K, V> implements Operation<K, V> {
+		public static final class Copy<K, V> extends Operation<K, V> {
+			private final K source;
+
+			public Copy(K source, K target) {
+				super(target);
+				this.source = source;
+			}
+
 			/**
-			 * Get the source key whose value is being copied into the target key.  If the
+			 * Get the source key whose value is being copied into the target key. If the
 			 * target key does not exist, it is created. If it already existed, then its
 			 * value is overwritten. If the source key does not exist, then the enclosing
 			 * transaction fails.
 			 *
 			 * @return
 			 */
-			public K getSource();
+			public K getSource() {
+				return source;
+			}
 		}
 
 		/**
@@ -144,13 +185,43 @@ public final class Transaction<K, V> implements Iterable<Operation<K, V>> {
 		 * @param <K>
 		 * @param <V>
 		 */
-		public static final class Move<K, V> implements Operation<K, V> {
+		public static final class Move<K, V> extends Operation<K, V> {
+			private final K source;
+
+			public Move(K source, K target) {
+				super(target);
+				this.source = source;
+			}
+
 			/**
 			 * Get the source key whose value is being moved into the target key.
 			 *
 			 * @return
 			 */
-			public K getSource();
+			public K getSource() {
+				return source;
+			}
 		}
+	}
+	
+	private static class Iterator<K,V> implements java.util.Iterator<Operation<K,V>> {
+		private Transaction<K,V> tx;
+		
+		public Iterator(Transaction<K,V> root) {
+			this.tx = root;
+		}
+		
+		@Override
+		public boolean hasNext() {
+			return tx != EMPTY;
+		}
+
+		@Override
+		public Operation<K,V> next() {
+			Operation<K,V> op = tx.operation;
+			tx = tx.parent;
+			return op;
+		}
+		
 	}
 }

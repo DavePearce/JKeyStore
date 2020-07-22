@@ -10,7 +10,7 @@ package jledger.core;
  * @param <V>
  * @param <T>
  */
-public interface Ledger<K,V,T extends Transaction<K,V>> {
+public interface Ledger<K,V> {
 
 	/**
 	 * Get the number of transactions in this ledger.
