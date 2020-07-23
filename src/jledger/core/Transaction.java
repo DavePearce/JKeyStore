@@ -13,7 +13,7 @@ package jledger.core;
  */
 public final class Transaction<K, V> implements Iterable<Transaction.Operation<K, V>> {
 	@SuppressWarnings("rawtypes")
-	private static final Transaction EMPTY = new Transaction<>(null,null);
+	public static final Transaction EMPTY = new Transaction<>(null,null);
 	
 	private final Transaction<K,V> parent;
 	private final Operation<K,V> operation;
