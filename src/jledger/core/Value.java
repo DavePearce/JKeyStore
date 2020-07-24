@@ -18,8 +18,27 @@ public interface Value {
 	public int size();
 
 	/**
+	 * Read a given byte from a given position in the value. The index must be
+	 * within bounds.
+	 * 
+	 * @param index
+	 * @return
+	 */
+	public byte read(int index);
+	
+	/**
+	 * Write a given byte to a given position within this value. The index must be
+	 * within bounds.
+	 *
+	 * @param index Position to overwrite
+	 * @param b data byte to written
+	 * @return
+	 */
+	public Delta write(int index, byte b);
+	
+	/**
 	 * Starting from a given position, read the contents of this value into a given
-	 * byte array. If the array is shorted than the length of this value, then the
+	 * byte array. If the array is shorter than the length of this value, then the
 	 * result is truncated. If the array is longer then the extra bytes are left
 	 * untouched.
 	 *
@@ -27,7 +46,7 @@ public interface Value {
 	 * @param bytes array to write data into.
 	 * @return
 	 */
-	public void read(int index, byte[] bytes);
+	//public void read(int index, byte[] bytes);
 
 	/**
 	 * Write a given byte to a given position within this value. The index must be
@@ -37,7 +56,7 @@ public interface Value {
 	 * @param bytes
 	 * @return
 	 */
-	public Delta write(int index, byte[] bytes);
+	//public Delta write(int index, byte[] bytes);
 
 	/**
 	 * Append a given number of (zeroed) bytes on to the end of this value.
@@ -45,14 +64,14 @@ public interface Value {
 	 * @param count
 	 * @return
 	 */
-	public Delta append(byte[] bytes);
+	//public Delta append(byte[] bytes);
 
 	/**
 	 * Get an input stream representation of this value.
 	 *
 	 * @return
 	 */
-	public InputStream getInputStream();
+	//public InputStream getInputStream();
 
 	/**
 	 * Indicates a delta over a previous value.

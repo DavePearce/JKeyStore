@@ -382,7 +382,7 @@ public class ByteArrayLedger {
 		ByteArrayLedger ledger = new ByteArrayLedger(10);
 		Key key = ledger.lookupOrRegister("main.whiley");
 		Transaction<Key,Value> txn = Transaction.EMPTY;
-		txn = txn.assign(key,new RawValue("hello"));
+		txn = txn.assign(key, new RawValue("hello"));
 		ledger.add(txn);
 		print(ledger);
 		Value v = ledger.get(key);
