@@ -37,6 +37,18 @@ public interface Value {
 	public Delta write(int index, byte b);
 	
 	/**
+	 * Replace a given section of this value with a new sequence of bytes. The new
+	 * byte sequence does not need to be the same length as the section replaced.
+	 * The section bing replaced must be entirely within bounds.
+	 *
+	 * @param index  starting offset of section being replaced
+	 * @param length size of section being replaced
+	 * @param b      data byte to written
+	 * @return
+	 */
+	public Delta replace(int index, int length, byte[] bytes);
+	
+	/**
 	 * Starting from a given position, read the contents of this value into a given
 	 * byte array. If the array is shorter than the length of this value, then the
 	 * result is truncated. If the array is longer then the extra bytes are left
@@ -74,12 +86,50 @@ public interface Value {
 	//public InputStream getInputStream();
 
 	/**
-	 * Indicates a delta over a previous value.
+	 * Indicates a delta over a previous value. This is a sequence of bytes which
+	 * replace a sequence of bytes in the original sequence. The replacement
+	 * sequence can be larger or smaller than the original sequence.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
 	public interface Delta extends Value {
-		public Value getParent();
+		/**
+		 * Get original sequence which this delta is modifying.
+		 * 
+		 * @return
+		 */
+		public Value parent();
+
+		/**
+		 * Get the length of the replaced sequence.
+		 * 
+		 * @return
+		 */
+		public int length();
+
+		/**
+		 * Get the start of the updated sequence
+		 * 
+		 * @return
+		 */
+		public int offset();
+
+		/**
+		 * Get the replacement bytes.
+		 * 
+		 * @return
+		 */
+		public byte[] bytes();
+	}
+	
+	/**
+	 * An interned value is one which physically stored in a given ledger.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Interned<K, V> extends Value {
+		public Ledger<K, V> getLedger();
 	}
 }

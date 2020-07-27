@@ -20,13 +20,18 @@ public interface Ledger<K,V> {
 	public long size();
 
 	/**
-	 * Get a given transaction from the ledger.
-	 *
-	 * @param txn
+	 * Get the current value associated with a given key.
 	 * @return
 	 */
-	public Transaction<K,V> get(long txn);
+	public V get(K key);
 
+	/**
+	 * Get the current value associated with a given key at a given timestamp.
+	 * 
+	 * @return
+	 */
+	public V get(int timestamp, K key);
+	
 	/**
 	 * Add a new transaction to the ledger. This may fail if the underlying
 	 * transaction fails for some reason.
