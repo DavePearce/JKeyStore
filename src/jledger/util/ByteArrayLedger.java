@@ -3,7 +3,6 @@ package jledger.util;
 import java.util.Arrays;
 
 import jledger.core.Ledger;
-import jledger.core.Transaction;
 import jledger.core.Value;
 
 /**
@@ -37,42 +36,16 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 	}
 
 	@Override
-	public long size() {
-		return size;
-	}
-
-	/**
-	 * Lookup a given key in this ledger. If the key is not registered, an
-	 * <code>IllegalArgumentException</code> is thrown.
-	 * 
-	 * @param key
-	 * @return
-	 */
 	public Key lookup(String key) {
 		byte[] bs = key.getBytes();
 		int offset = internalFind(KEY, bs, size, offsets, bytes);
-		if (offset >= 0) {
-			return new Key(this, offset);
-		} else {
-			throw new IllegalArgumentException("key not found");
-		}
+		return (offset < 0) ? null : new Key(this, offset); 
 	}
-
-	/**
-	 * Lookup a given key in this ledger. If the key is not registered, then
-	 * register it.
-	 * 
-	 * @param key
-	 * @return
-	 */
-	public Key lookupOrAdd(String key) {
-		byte[] bs = key.getBytes();
-		int offset = internalFind(KEY, bs, size, offsets, bytes);
-		if (offset >= 0) {
-			return new Key(this, offset);
-		} else {
-			return new Key(this, append(KEY, bs));
-		}
+	
+	@Override
+	public Key add(String key) {
+		byte[] bs = key.getBytes();		
+		return new Key(this, append(KEY, bs));
 	}
 
 	/**
@@ -84,6 +57,7 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 	 * @param value
 	 * @return
 	 */
+	@Override
 	public Data add(jledger.core.Value value) {
 		//
 		if (value instanceof Data && ((Data) value).ledger == this) {
@@ -112,18 +86,17 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 	 * @param txn
 	 * @return
 	 */
-	public void add(Transaction<Key, Data> txn) {
+	@Override
+	public void add(Pair<Key, Data>... txn) {
 		int index = 0;
-		byte[] bytes = new byte[txn.size() * 2];
-		for (Transaction.Operation<Key, Data> op : txn) {
-			if (op instanceof Transaction.Operation.Assign) {
-				Transaction.Operation.Assign<Key, Data> a = (Transaction.Operation.Assign) op;
-				Key k = a.getTarget();
-				Data v = a.getValue();
-				// FIXME: clearly a bug here for larger identifiers.
-				bytes[index++] = (byte) k.id;
-				bytes[index++] = (byte) v.id;
-			}
+		byte[] bytes = new byte[txn.length * 2];
+		for (int i = 0; i != txn.length; ++i) {
+			Pair<Key, Data> a = txn[i];
+			Key k = a.first();
+			Data v = a.second();
+			// FIXME: clearly a bug here for larger identifiers.
+			bytes[index++] = (byte) k.id;
+			bytes[index++] = (byte) v.id;
 		}
 		append(TRANSACTION, bytes);
 	}
@@ -444,13 +417,13 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		Value v1 = new ByteArrayValue("dave".getBytes());
 		Value v2 = v1.write(0, (byte) 'D');
 		ByteArrayLedger ledger = new ByteArrayLedger(100);
-		Key k1 = ledger.lookupOrAdd("dave");
-		Key k2 = ledger.lookupOrAdd("src/main.whiley");
+		Key k1 = ledger.add("dave");
+		Key k2 = ledger.add("src/main.whiley");
 		Data d1 = ledger.add(v1);
-		ledger.add(Transaction.EMPTY.assign(k1, d1));
+		ledger.add(new Pair<>(k1, d1));
 		System.out.println("get(dave)=" + ledger.get(k1));
 		Data d2 = ledger.add(d1.replace(3, 1, "id".getBytes()));
-		ledger.add(Transaction.EMPTY.assign(k1, d2));
+		ledger.add(new Pair<>(k1, d2));
 		System.out.println("get(dave)=" + ledger.get(k1));
 		print(ledger.bytes, ledger.size);
 	}

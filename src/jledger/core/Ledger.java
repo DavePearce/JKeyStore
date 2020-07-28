@@ -1,5 +1,7 @@
 package jledger.core;
 
+import jledger.util.Pair;
+
 /**
  * Represents an immutable transaction ledger. That is a sequence of zero or
  * more transactions which can be appended.
@@ -10,14 +12,7 @@ package jledger.core;
  * @param <V>
  * @param <T>
  */
-public interface Ledger<K,V> {
-
-	/**
-	 * Get the number of transactions in this ledger.
-	 *
-	 * @return
-	 */
-	public long size();
+public interface Ledger<K,V extends Value.Interned<K, V>> {
 
 	/**
 	 * Get the current value associated with a given key.
@@ -33,10 +28,35 @@ public interface Ledger<K,V> {
 	public V get(int timestamp, K key);
 	
 	/**
-	 * Add a new transaction to the ledger. This may fail if the underlying
-	 * transaction fails for some reason.
+	 * Check whether a given key exists in the ledger or not. If it does exist, then
+	 * return that.
+	 * 
+	 * @param key String representation of the key.
+	 * @return The key itself, or <code>null</code> if the key doesn't exist.
+	 */
+	public K lookup(String key);
+	
+	/**
+	 * Add a new key to the ledger corresponding to a given string.
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public K add(String key);
+	
+	/**
+	 * Add a new value to the ledger producing an interned value which can be used
+	 * for transactions on this ledger.
+	 * 
+	 * @param value
+	 * @return
+	 */
+	public V add(Value value);
+	
+	/**
+	 * Apply a sequence of key/value assignments as a single atomic transaction.
 	 *
 	 * @param t
 	 */
-	public void add(Transaction<K, V> t) throws Transaction.Failure;
+	public void add(Pair<K, V>... txn);
 }

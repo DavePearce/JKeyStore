@@ -1,7 +1,5 @@
 package jledger.core;
 
-import java.io.InputStream;
-
 /**
  * Represents an immutable data blob which can be written into a ledger. Values
  * are immutable data structures which, when written, construct new values.
@@ -129,7 +127,7 @@ public interface Value {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Interned<K, V> extends Value {
+	public interface Interned<K, V extends Interned<K,V>> extends Value {
 		public Ledger<K, V> getLedger();
 	}
 }
