@@ -75,13 +75,13 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 	 * @return
 	 */
 	@Override
-	public Data add(jledger.core.Value value) {
+	public Data add(Value value) {
 		//
 		if (value instanceof Data && ((Data) value).ledger == this) {
 			// Easy, already interned on this ledger
 			return (Data) value;
-		} else if (value instanceof Data.Delta) {
-			Data.Delta d = (Data.Delta) value;
+		} else if (value instanceof Value.Delta) {
+			Value.Delta d = (Value.Delta) value;
 			// Intern the parent
 			Data parent = add(d.parent());
 			//
@@ -279,11 +279,11 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 
 		@Override
 		public Delta write(int index, byte b) {
-			return new ByteArrayValue.Delta(this,index,1,b);
+			return new ByteArrayValue.Delta(this, index, 1, b);
 		}
 
 		@Override
-		public Delta replace(int index, int length, byte[] bytes) {
+		public Delta replace(int index, int length, byte... bytes) {
 			return new ByteArrayValue.Delta(this, index, length, bytes);
 		}
 		
@@ -425,7 +425,7 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 			byte[] ps = internalGet(p,ledger);
 			// Extract updated bytes
 			byte[] us = new byte[size - 3];
-			System.arraycopy(bytes, offset + 4, us, 0, us.length);
+			System.arraycopy(bytes, offset + 5, us, 0, us.length);
 			// Done
 			return ArrayUtils.replace(ps, o, l, us);
 		}			

@@ -13,6 +13,8 @@
 // limitations under the License.
 package jledger.util;
 
+import java.util.Arrays;
+
 /**
  * Provides a collection of useful array manipulation methods.
  * 
@@ -33,11 +35,11 @@ public class ArrayUtils {
 	 *                    original sequence
 	 * @return
 	 */
-	public static byte[] replace(byte[] bytes, int offset, int length, byte[] replacement) {
+	public  static byte[] replace(byte[] bytes, int offset, int length, byte[] replacement) {
 		// Calculate size of the updated sequence
 		final int size = (bytes.length - length) + replacement.length;
 		byte[] nbytes = new byte[size];
-		// Copy untouched region from beginning of original array upto start of region
+		// Copy untouched region from beginning of original array up to start of region
 		// being replaced.
 		System.arraycopy(bytes, 0, nbytes, 0, offset);
 		// Copy over replacement sequence.

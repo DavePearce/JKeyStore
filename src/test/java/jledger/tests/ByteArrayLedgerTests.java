@@ -15,7 +15,6 @@ package jledger.tests;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
@@ -275,6 +274,26 @@ public class ByteArrayLedgerTests {
 		test_check_value(d2, "hello World".getBytes());
 	}
 	
+	@Test
+	public void test_diffs_02() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs = "Hello World".getBytes();		
+		ByteArrayLedger.Data d1 = test_add_value(bs,ledger);
+		ByteArrayLedger.Data d2 = test_add_value(d1.replace(0, 1, (byte) 'h'), ledger);
+		//
+		test_check_value(d2, "hello World".getBytes());
+	}
+	
+	@Test
+	public void test_diffs_03() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs = "Hello World".getBytes();		
+		ByteArrayLedger.Data d1 = test_add_value(bs,ledger);
+		ByteArrayLedger.Data d2 = test_add_value(d1.replace(0, 2, (byte) 'h'), ledger);
+		//
+		test_check_value(d2, "hllo World".getBytes());
+	}
+	
 	private static void test_add_key(String key, ByteArrayLedger ledger) {
 		// Store size
 		int size = ledger.size();
@@ -309,7 +328,7 @@ public class ByteArrayLedgerTests {
 		ByteArrayLedger.Data d = ledger.add(val);
 		// Sanity check what was added
 		assertTrue(d != null);
-		assertTrue(Arrays.equals(d.get(),bytes));
+		assertArrayEquals(d.get(),bytes);
 		assertEquals(ledger.size(), size + 1);
 		//
 		return d;
@@ -318,7 +337,7 @@ public class ByteArrayLedgerTests {
 	private static void test_check_value(ByteArrayLedger.Data d, byte[] bytes) {		
 		// Sanity check what was added
 		assertTrue(d != null);
-		assertTrue(Arrays.equals(d.get(),bytes));
+		assertArrayEquals(d.get(),bytes);
 	}
 	
 	private static String createString(String preamble, int n, int digits) {

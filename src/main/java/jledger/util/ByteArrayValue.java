@@ -13,6 +13,8 @@
 // limitations under the License.
 package jledger.util;
 
+import java.util.Arrays;
+
 import jledger.core.Value;
 
 /**
@@ -116,7 +118,7 @@ public class ByteArrayValue implements Value {
 		}
 		
 		@Override
-		public Delta replace(int index, int length, byte[] bytes) {
+		public Delta replace(int index, int length, byte... bytes) {
 			return new ByteArrayValue.Delta(this, index, length, bytes);
 		}
 	}

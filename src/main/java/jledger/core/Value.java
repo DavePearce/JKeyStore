@@ -64,7 +64,7 @@ public interface Value {
 	 * @param b      data byte to written
 	 * @return
 	 */
-	public Delta replace(int index, int length, byte[] bytes);
+	public Delta replace(int index, int length, byte... bytes);
 	
 	/**
 	 * Starting from a given position, read the contents of this value into a given
