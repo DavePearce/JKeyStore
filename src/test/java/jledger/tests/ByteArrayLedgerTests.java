@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import jledger.core.Value;
 import jledger.util.ByteArrayLedger;
+import jledger.util.ByteArrayLedger.Data;
 import jledger.util.ByteArrayLedger.Key;
 import jledger.util.ByteArrayValue;
 import jledger.util.Pair;
@@ -33,6 +34,9 @@ import jledger.util.Pair;
  *
  */
 public class ByteArrayLedgerTests {
+	// ================================================================================
+	// Keys
+	// ================================================================================
 
 	@Test
 	public void test_keys_01() {
@@ -133,6 +137,10 @@ public class ByteArrayLedgerTests {
 		}
 	}
 	
+	// ================================================================================
+	// Values
+	// ================================================================================
+
 	@Test
 	public void test_values_01() {
 		ByteArrayLedger ledger = new ByteArrayLedger(100);
@@ -264,6 +272,10 @@ public class ByteArrayLedgerTests {
 		}
 	}
 	
+	// ================================================================================
+	// Diff
+	// ================================================================================
+	
 	@Test
 	public void test_diffs_01() {
 		ByteArrayLedger ledger = new ByteArrayLedger(100);
@@ -294,7 +306,26 @@ public class ByteArrayLedgerTests {
 		test_check_value(d2, "hllo World".getBytes());
 	}
 	
-	private static void test_add_key(String key, ByteArrayLedger ledger) {
+	// ================================================================================
+	// Transactions
+	// ================================================================================
+	
+	@Test
+	public void test_txns_01() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs = "Hello World".getBytes();
+		ByteArrayLedger.Key k1 = test_add_key("key", ledger);
+		assertEquals(null, ledger.get(k1));
+		//
+		ByteArrayLedger.Data d1 = test_add_value(bs, ledger);
+		test_apply_txn(ledger, new Pair<>(k1, d1));
+	}
+	
+	// ================================================================================
+	// Helpers
+	// ================================================================================
+		
+	private static ByteArrayLedger.Key test_add_key(String key, ByteArrayLedger ledger) {
 		// Store size
 		int size = ledger.size();
 		// Add new key
@@ -307,6 +338,8 @@ public class ByteArrayLedgerTests {
 		assertTrue(k1.hashCode() == k2.hashCode());
 		assertTrue(k1.get().equals(key));
 		assertEquals(ledger.size(), size + 1);
+		//
+		return k1;
 	}
 	
 	private static void test_check_key(String key, ByteArrayLedger ledger) {
@@ -333,6 +366,17 @@ public class ByteArrayLedgerTests {
 		//
 		return d;
 	}
+	
+	private static void test_apply_txn(ByteArrayLedger ledger, Pair<Key, Data>... pairs) {
+		ledger.add(pairs);
+		// Sanity check
+		for (Pair<Key, Data> p : pairs) {
+			byte[] bs1 = p.second().get();
+			byte[] bs2 = ledger.get(p.first()).get();
+			assertArrayEquals(bs1, bs2);
+		}
+	}
+	
 	
 	private static void test_check_value(ByteArrayLedger.Data d, byte[] bytes) {		
 		// Sanity check what was added
