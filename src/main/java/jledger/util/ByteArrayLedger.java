@@ -48,6 +48,10 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		this.size = 0;
 	}
 
+	public int size() {
+		return size;
+	}
+	
 	@Override
 	public Key lookup(String key) {
 		byte[] bs = key.getBytes();
@@ -211,6 +215,26 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		public int id() {
 			return id;
 		}
+		
+		public String get() {
+			return new String(internalGetPayload(id, ledger));
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof Key) {
+				Key k = (Key) o;
+				return ledger == k.ledger && id == k.id;
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return id;
+		}
+		
+		public String toString() {
+			return internalToString(id, ledger); 
+		}
 	}
 	
 	/**
@@ -265,7 +289,7 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		}
 		
 		public String toString() {
-			return internalToString(id,ledger.bytes,ledger.size,ledger.offsets);
+			return internalToString(id,ledger);
 		}
 	}
 
@@ -281,7 +305,7 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 	private static int internalFind(byte kind, byte[] bytes, int n, int[] offsets, byte[] ledger) {
 		// Check first item
 		if (ledger[0] == kind) {
-			if (internalEquals(bytes, ledger, 0)) {
+			if (internalEquals(bytes, ledger, 2)) {
 				return 0;
 			}
 		}
@@ -290,7 +314,7 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 			int offset = offsets[i - 1];
 			// Check object kind
 			if (ledger[offset] == kind) {
-				if (internalEquals(bytes, ledger, offset)) {
+				if (internalEquals(bytes, ledger, offset + 2)) {
 					return i;
 				}
 			}
@@ -298,14 +322,17 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		return -1;
 	}
 
-	private static String internalToString(int id, byte[] bytes, int n, int[] offsets) {
+	private static String internalToString(int id, ByteArrayLedger ledger) {
+		final byte[] bytes = ledger.bytes;
+		final int[] offsets = ledger.offsets;
 		// Calculate offset of this packet
 		int offset = id == 0 ? 0 : offsets[id - 1];
 		//
 		byte header = bytes[offset];
 		int size = bytes[offset + 1];
 		//
-		if(header == DATA) {
+		switch(header) {
+		case DATA: {
 			String r = "";
 			for (int i = 0; i < size; ++i) {
 				if(i != 0) {
@@ -314,14 +341,15 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 				r += String.format("%02X", bytes[offset + 2 + i]);
 			}
 			return r;
-		} else {
+		}
+		case DIFF: {
 			int p = bytes[offset + 2];
 			int o = bytes[offset + 3];
 			int l = bytes[offset + 4];
-			String str = internalToString(p,bytes,n,offsets);
+			String str = internalToString(p, ledger);
 			String[] bs = str.split(";");
-			String r  = "";
-			boolean first=true;
+			String r = "";
+			boolean first = true;
 			for (int i = 0; i < o; ++i) {
 				if (!first) {
 					r += ";";
@@ -336,7 +364,7 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 				first = false;
 				r += String.format("%02X", bytes[offset + 2 + i]);
 			}
-			for (int i = (o+l); i < bs.length; ++i) {
+			for (int i = (o + l); i < bs.length; ++i) {
 				if (!first) {
 					r += ";";
 				}
@@ -345,6 +373,8 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 			}
 			return r;
 		}
+		}
+		throw new IllegalArgumentException("invalid packet encoutered");
 	}
 	
 	private static int internalSize(int id, byte[] bytes, int n, int[] offsets) {
@@ -364,6 +394,24 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		}
 	}
 
+	/**
+	 * Get the entire payload of a given packet and return it as a <code>byte</code>
+	 * array.
+	 * 
+	 * @param id
+	 * @param ledger
+	 * @return
+	 */
+	private static byte[] internalGetPayload(int id, ByteArrayLedger ledger) {
+		final byte[] bytes = ledger.bytes;
+		final int[] offsets = ledger.offsets;
+		// Calculate offset of this packet
+		int offset = id == 0 ? 0 : offsets[id - 1];
+		byte header = bytes[offset];
+		int size = bytes[offset + 1];
+		return Arrays.copyOfRange(bytes,offset+2,offset+2+size);
+	}
+	
 	private static byte internalRead(int id, int index, byte[] bytes, int n, int[] offsets) {
 		int offset = offsets[id];
 		byte header = bytes[offset];
