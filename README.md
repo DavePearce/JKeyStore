@@ -1,3 +1,3 @@
 # JLedger
 
-A simple ledger implementation for use within the Whiley Compiler.
+A simple framework for managing ledgers, including those which are thread-safe.
