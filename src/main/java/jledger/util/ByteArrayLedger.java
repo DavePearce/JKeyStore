@@ -217,7 +217,7 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		}
 		
 		public String get() {
-			return new String(internalGetPayload(id, ledger));
+			return new String(internalGet(id, ledger));
 		}
 		
 		public boolean equals(Object o) {
@@ -263,6 +263,10 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 			return id;
 		}
 
+		public byte[] get() {
+			return internalGet(id, ledger);
+		}
+		
 		@Override
 		public int size() {
 			return internalSize(id, ledger.bytes, ledger.size, ledger.offsets);
@@ -402,14 +406,31 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 	 * @param ledger
 	 * @return
 	 */
-	private static byte[] internalGetPayload(int id, ByteArrayLedger ledger) {
+	private static byte[] internalGet(int id, ByteArrayLedger ledger) {
 		final byte[] bytes = ledger.bytes;
 		final int[] offsets = ledger.offsets;
 		// Calculate offset of this packet
 		int offset = id == 0 ? 0 : offsets[id - 1];
 		byte header = bytes[offset];
 		int size = bytes[offset + 1];
-		return Arrays.copyOfRange(bytes,offset+2,offset+2+size);
+		switch(header) {
+		case KEY:
+		case DATA:
+			return Arrays.copyOfRange(bytes,offset+2,offset+2+size);
+		case DIFF: {
+			int p = bytes[offset + 2];
+			int o = bytes[offset + 3];
+			int l = bytes[offset + 4];
+			// Determine parent bytes
+			byte[] ps = internalGet(p,ledger);
+			// Extract updated bytes
+			byte[] us = new byte[size - 3];
+			System.arraycopy(bytes, offset + 4, us, 0, us.length);
+			// Done
+			return ArrayUtils.replace(ps, o, l, us);
+		}			
+		}
+		throw new IllegalArgumentException("unknown packet encountered");
 	}
 	
 	private static byte internalRead(int id, int index, byte[] bytes, int n, int[] offsets) {

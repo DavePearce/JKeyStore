@@ -35,6 +35,11 @@ public class ByteArrayValue implements Value {
 	}
 
 	@Override
+	public byte[] get() {
+		return bytes;
+	}
+	
+	@Override
 	public byte read(int index) {
 		return bytes[index];
 	}
@@ -80,6 +85,13 @@ public class ByteArrayValue implements Value {
 		@Override
 		public int offset() {
 			return offset;
+		}
+		
+		public byte[] get() {
+			// Determine parent bytes
+			byte[] bs = parent.get();
+			// Done
+			return ArrayUtils.replace(bs, offset, length, bytes);
 		}
 		
 		@Override

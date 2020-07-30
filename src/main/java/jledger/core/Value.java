@@ -29,6 +29,13 @@ public interface Value {
 	public int size();
 
 	/**
+	 * Get the complete contents of this value as a sequence of bytes.
+	 * 
+	 * @return
+	 */
+	public byte[] get();
+
+	/**
 	 * Read a given byte from a given position in the value. The index must be
 	 * within bounds.
 	 * 

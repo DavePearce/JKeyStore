@@ -14,10 +14,16 @@
 package jledger.tests;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.junit.jupiter.api.Test;
 
+import jledger.core.Value;
 import jledger.util.ByteArrayLedger;
 import jledger.util.ByteArrayLedger.Key;
+import jledger.util.ByteArrayValue;
+import jledger.util.Pair;
 
 /**
  * Perform a range of tests on small domains. We use
@@ -50,10 +56,9 @@ public class ByteArrayLedgerTests {
 	
 	@Test
 	public void test_keys_03() {
-		// Test adding keys of increasingle large sizes
 		ByteArrayLedger ledger = new ByteArrayLedger(100);		
 		// Create a key with 64 digits
-		String key = createKey("key",0,64);
+		String key = createString("key",0,64);
 		// Add single key
 		test_add_key(key,ledger);
 		test_check_key(key,ledger);
@@ -61,10 +66,9 @@ public class ByteArrayLedgerTests {
 	
 	@Test
 	public void test_keys_04() {
-		// Test adding keys of increasingle large sizes
 		ByteArrayLedger ledger = new ByteArrayLedger(100);		
 		// Create a key with 128 digits
-		String key = createKey("key",0,128);
+		String key = createString("key",0,128);
 		// Add single key
 		test_add_key(key,ledger);
 		test_check_key(key,ledger);
@@ -72,10 +76,9 @@ public class ByteArrayLedgerTests {
 	
 	@Test
 	public void test_keys_05() {
-		// Test adding keys of increasingle large sizes
 		ByteArrayLedger ledger = new ByteArrayLedger(100);		
 		// Create a key with 256 digits
-		String key = createKey("key",0,256);
+		String key = createString("key",0,256);
 		// Add single key
 		test_add_key(key,ledger);
 		test_check_key(key,ledger);
@@ -83,10 +86,9 @@ public class ByteArrayLedgerTests {
 	
 	@Test
 	public void test_keys_06() {
-		// Test adding keys of increasingly large sizes
 		ByteArrayLedger ledger = new ByteArrayLedger(100);		
 		// Create a key with 32768 digits
-		String key = createKey("key",0,32768);
+		String key = createString("key",0,32768);
 		// Add single key
 		test_add_key(key,ledger);
 		test_check_key(key,ledger);
@@ -94,10 +96,9 @@ public class ByteArrayLedgerTests {
 	
 	@Test
 	public void test_keys_07() {
-		// Test adding keys of increasingly large sizes
 		ByteArrayLedger ledger = new ByteArrayLedger(100);		
 		// Create a key with 65546 digits
-		String key = createKey("key",0,65536);
+		String key = createString("key",0,65536);
 		// Add single key
 		test_add_key(key,ledger);
 		test_check_key(key,ledger);
@@ -105,34 +106,173 @@ public class ByteArrayLedgerTests {
 	
 	@Test
 	public void test_keys_08() {
-		// Test adding keys of increasingle large sizes
 		ByteArrayLedger ledger = new ByteArrayLedger(100);
 		for (int i = 5; i < 256; i = i + 1) {
-			String key = createKey("key", 0, i);
+			String key = createString("key", 0, i);
 			// Add single key
 			test_add_key(key, ledger);
 		}
 		// Check all keys
 		for (int i = 5; i < 256; i = i + 1) {
-			String key = createKey("key", 0, i);
+			String key = createString("key", 0, i);
 			test_check_key(key, ledger);
 		}
 	}
 	
 	@Test
 	public void test_keys_09() {
-		// Test adding keys of increasingle large sizes
 		ByteArrayLedger ledger = new ByteArrayLedger(100);
 		for (int i = 256; i < 65536; i = i + 1) {
-			String key = createKey("key", 0, i);
+			String key = createString("key", 0, i);
 			// Add single key
 			test_add_key(key, ledger);
 		}
 		// Check all keys
 		for (int i = 256; i < 65536; i = i + 1) {
-			String key = createKey("key", 0, i);
+			String key = createString("key", 0, i);
 			test_check_key(key, ledger);
 		}
+	}
+	
+	@Test
+	public void test_values_01() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs = "Hello World".getBytes();
+		test_add_value(bs,ledger);
+	}
+	
+	@Test
+	public void test_values_02() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs1 = "Hello World".getBytes();
+		byte[] bs2 = "Another World".getBytes();
+		ByteArrayLedger.Data d1 = test_add_value(bs1,ledger);
+		ByteArrayLedger.Data d2 = test_add_value(bs2,ledger);
+		test_check_value(d1,bs1);
+		test_check_value(d2,bs2);
+	}
+	
+	@Test
+	public void test_values_03() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs = createString("data",0,64).getBytes();
+		ByteArrayLedger.Data d1 = test_add_value(bs,ledger);
+		test_check_value(d1,bs);
+	}
+	
+	@Test
+	public void test_values_04() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs1 = createString("data", 0, 64).getBytes();
+		byte[] bs2 = createString("data", 123, 64).getBytes();
+		ByteArrayLedger.Data d1 = test_add_value(bs1,ledger);
+		ByteArrayLedger.Data d2 = test_add_value(bs2,ledger);
+		test_check_value(d1,bs1);
+		test_check_value(d2,bs2);
+	}
+	
+	@Test
+	public void test_values_05() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs = createString("data",0,128).getBytes();
+		ByteArrayLedger.Data d1 = test_add_value(bs,ledger);
+		test_check_value(d1,bs);
+	}
+	
+	@Test
+	public void test_values_06() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs1 = createString("data", 0, 128).getBytes();
+		byte[] bs2 = createString("data", 123, 128).getBytes();
+		ByteArrayLedger.Data d1 = test_add_value(bs1,ledger);
+		ByteArrayLedger.Data d2 = test_add_value(bs2,ledger);
+		test_check_value(d1,bs1);
+		test_check_value(d2,bs2);
+	}
+	
+	@Test
+	public void test_values_07() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs = createString("data",0,256).getBytes();
+		ByteArrayLedger.Data d1 = test_add_value(bs,ledger);
+		test_check_value(d1,bs);
+	}
+	
+	@Test
+	public void test_values_08() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs1 = createString("data", 0, 256).getBytes();
+		byte[] bs2 = createString("data", 123, 256).getBytes();
+		ByteArrayLedger.Data d1 = test_add_value(bs1,ledger);
+		ByteArrayLedger.Data d2 = test_add_value(bs2,ledger);
+		test_check_value(d1,bs1);
+		test_check_value(d2,bs2);
+	}
+		
+	
+	@Test
+	public void test_values_09() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs = createString("data",0,16384).getBytes();
+		ByteArrayLedger.Data d1 = test_add_value(bs,ledger);
+		test_check_value(d1,bs);
+	}
+	
+	@Test
+	public void test_values_10() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs1 = createString("data", 0, 16384).getBytes();
+		byte[] bs2 = createString("data", 123, 16384).getBytes();
+		ByteArrayLedger.Data d1 = test_add_value(bs1,ledger);
+		ByteArrayLedger.Data d2 = test_add_value(bs2,ledger);
+		test_check_value(d1,bs1);
+		test_check_value(d2,bs2);
+	}	
+
+	@Test
+	public void test_values_11() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		ArrayList<Pair<ByteArrayLedger.Data, byte[]>> items = new ArrayList<>();
+		//
+		for (int i = 5; i < 256; i = i + 1) {
+			byte[] bs = createString("data", 0, i).getBytes();
+			// Add single value
+			ByteArrayLedger.Data d = test_add_value(bs, ledger);
+			// Save for later
+			items.add(new Pair<>(d, bs));
+		}
+		// Check all values
+		for (Pair<ByteArrayLedger.Data, byte[]> item : items) {
+			test_check_value(item.first(), item.second());
+		}
+	}
+	
+	@Test
+	public void test_values_12() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		ArrayList<Pair<ByteArrayLedger.Data, byte[]>> items = new ArrayList<>();
+		//
+		for (int i = 256; i < 65536; i = i + 1) {
+			byte[] bs = createString("data", 0, i).getBytes();
+			// Add single value
+			ByteArrayLedger.Data d = test_add_value(bs, ledger);
+			// Save for later
+			items.add(new Pair<>(d, bs));
+		}
+		// Check all values
+		for (Pair<ByteArrayLedger.Data, byte[]> item : items) {
+			test_check_value(item.first(), item.second());
+		}
+	}
+	
+	@Test
+	public void test_diffs_01() {
+		ByteArrayLedger ledger = new ByteArrayLedger(100);
+		byte[] bs = "Hello World".getBytes();		
+		ByteArrayLedger.Data d1 = test_add_value(bs,ledger);
+		ByteArrayLedger.Data d2 = test_add_value(d1.write(0, (byte) 'h'), ledger);
+		//
+		test_check_value(d2, "hello World".getBytes());
 	}
 	
 	private static void test_add_key(String key, ByteArrayLedger ledger) {
@@ -157,7 +297,31 @@ public class ByteArrayLedgerTests {
 		assertTrue(k1.get().equals(key));
 	}
 	
-	private static String createKey(String preamble, int n, int digits) {
+	private static ByteArrayLedger.Data test_add_value(byte[] bytes, ByteArrayLedger ledger) {
+		return test_add_value(new ByteArrayValue(bytes),ledger);
+	}
+	
+	private static ByteArrayLedger.Data test_add_value(Value val, ByteArrayLedger ledger) {
+		byte[] bytes = val.get();
+		// Store size
+		int size = ledger.size();
+		// Add a new value to the ledger
+		ByteArrayLedger.Data d = ledger.add(val);
+		// Sanity check what was added
+		assertTrue(d != null);
+		assertTrue(Arrays.equals(d.get(),bytes));
+		assertEquals(ledger.size(), size + 1);
+		//
+		return d;
+	}
+	
+	private static void test_check_value(ByteArrayLedger.Data d, byte[] bytes) {		
+		// Sanity check what was added
+		assertTrue(d != null);
+		assertTrue(Arrays.equals(d.get(),bytes));
+	}
+	
+	private static String createString(String preamble, int n, int digits) {
 		String id = Integer.toHexString(n);
 		int diff = digits - (preamble.length() + id.length());
 		if(diff < 0) {
