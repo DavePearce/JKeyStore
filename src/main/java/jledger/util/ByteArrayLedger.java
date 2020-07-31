@@ -48,8 +48,22 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		this.size = 0;
 	}
 
+	/**
+	 * Return the number of items on the ledger.
+	 * 
+	 * @return
+	 */
 	public int size() {
 		return size;
+	}
+	
+	/**
+	 * Return the amount of space utilised by the ledger (in bytes).
+	 * 
+	 * @return
+	 */
+	public int space() {
+		return (size == 0) ? 0 : offsets[size-1];
 	}
 	
 	@Override
@@ -456,26 +470,28 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		}
 	}
 
-	private static void print(byte[] ledger, int n) {
-		for (int i = 0, offset = 0; i != n; ++i) {
-			byte header = ledger[offset];
-			byte length = ledger[offset + 1];
-			byte[] bytes = new byte[length];
-			System.arraycopy(ledger, offset + 2, bytes, 0, length);
+	public  static void print(ByteArrayLedger ledger) {
+		byte[] bytes = ledger.bytes;
+		int n = ledger.size;
+		for (int i = 0, offset = 0; i < n; ++i) {
+			byte header = bytes[offset];
+			byte length = bytes[offset + 1];		
+			byte[] payload = new byte[length];
+			System.arraycopy(bytes, offset + 2, payload, 0, length);
 			switch (header) {
 			case KEY:
 				System.out
-						.println("[" + i + "]\t" + toString(header) + ":" + length + ":\"" + new String(bytes) + "\"");
+						.println("[" + offset + "]\t" + toString(header) + ":" + length + ":\"" + new String(payload) + "\"");
 				break;
 			case DATA:
-				System.out.println("[" + i + "]\t" + toString(header) + ":" + length + ":" + Arrays.toString(bytes));
+				System.out.println("[" + offset + "]\t" + toString(header) + ":" + length + ":" + Arrays.toString(payload));
 				break;
 			case DIFF:
-				System.out.println("[" + i + "]\t" + toString(header) + ":" + length + ":" + bytes[0] + ":" + bytes[1]
-						+ ":" + bytes[2] + ":" + Arrays.toString(Arrays.copyOfRange(bytes, 3, bytes.length)));
+				System.out.println("[" + offset + "]\t" + toString(header) + ":" + length + ":" + payload[0] + ":" + payload[1]
+						+ ":" + payload[2] + ":\"" + new String(Arrays.copyOfRange(payload, 3, payload.length)) + "\"");
 				break;
 			case TRANSACTION:
-				System.out.println("[" + i + "]\t" + toString(header) + ":" + length + ":" + Arrays.toString(bytes));
+				System.out.println("[" + offset + "]\t" + toString(header) + ":" + length + ":" + Arrays.toString(payload));
 			}
 			offset += (length + 2);
 		}
@@ -507,6 +523,6 @@ public class ByteArrayLedger implements Ledger<ByteArrayLedger.Key, ByteArrayLed
 		Data d2 = ledger.add(d1.replace(3, 1, "id".getBytes()));
 		ledger.add(new Pair<>(k1, d2));
 		System.out.println("get(dave)=" + ledger.get(k1));
-		print(ledger.bytes, ledger.size);
+		print(ledger);
 	}
 }

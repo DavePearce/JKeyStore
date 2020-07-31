@@ -23,6 +23,26 @@ import java.util.Arrays;
  */
 public class ArrayUtils {
 	/**
+	 * Check whether or not the elements of this array are sorted according to their
+	 * underlying order or not.
+	 *
+	 * @param children
+	 * @return
+	 */
+	public static <T extends Comparable<T>> boolean isSorted(T[] children) {
+		int r = 0;
+		for (int i = 1; i < children.length; ++i) {
+			int c = children[i - 1].compareTo(children[i]);
+			if (c > 0) {
+				// NOT in sorted order
+				return false;
+			}
+		}
+		// All good
+		return true;
+	}
+	
+	/**
 	 * Replace a sequence of bytes in a given array with another sequence (which may
 	 * have a different size).
 	 * 
