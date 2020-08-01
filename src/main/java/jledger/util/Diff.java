@@ -47,8 +47,6 @@ public class Diff implements Iterable<Diff.Delta> {
 	private Diff(Delta... deltas) {
 		if (deltas == null) {
 			throw new IllegalArgumentException("null deltas");
-		} else if(deltas.length == 0) {
-			throw new IllegalArgumentException("empty deltas");
 		} else if(!ArrayUtils.isSorted(deltas)) {
 			throw new IllegalArgumentException("unsorted deltas");
 		} else if(!disjoint(deltas)) {
@@ -127,10 +125,13 @@ public class Diff implements Iterable<Diff.Delta> {
 		return result;
 	}
 
-	public String toString() {
-		String r = deltas[0].toString();
-		for(int i=1;i!=deltas.length;++i) {
-			r += "," + deltas[i].toString();
+	public String toString() {		
+		String r = "";
+		if(deltas.length > 0) {
+			r += deltas[0].toString();
+			for(int i=1;i!=deltas.length;++i) {
+				r += "," + deltas[i].toString();
+			}
 		}
 		return "{" + r + "}";
 	}
@@ -276,6 +277,7 @@ public class Diff implements Iterable<Diff.Delta> {
 	 * @return
 	 */
 	public static Diff construct(String before, String after) {
+		System.out.println("CONSTRUCTING: " + before + " ---> " + after);
 		return construct(before.getBytes(), after.getBytes());
 	}
 	
@@ -290,49 +292,38 @@ public class Diff implements Iterable<Diff.Delta> {
 	public static Diff construct(byte[] before, byte[] after) {
 		// Apply the LCS algorithm
 		int[] mapping = longestCommonSubsequence(before, after);
-		//
+		// FIXME: be good to improve readability of what follows!
 		System.out.println("MAPPING: " + Arrays.toString(mapping));
-		// Now, convert mapping into a diff
+		// Convert mapping to deltas
 		ArrayList<Delta> deltas = new ArrayList<>();
-		int opos = 0;
-		int rpos = 0;
-		Delta d;
-		while ((d = extractDelta(mapping, opos, rpos, after)) != null) {
-			// Extract next delta
-			deltas.add(d);
-			// Advance pointers
-			opos = d.offset + d.length;
-			rpos = rpos + d.bytes.length;
-		}
+		// Initialise after markers
+		int aStart = 0, aPos = 0;
+		// Initialise before markers
+		int bStart = 0, bPos = 0;
+		// Proceed extracting delta's
+		while (bStart < mapping.length || aStart < after.length) {
+			System.out.println("[" + bStart + ".." + bPos + "] => [" + aStart + ".." + aPos + "]");
+			if (bPos >= mapping.length) {
+				byte[] additions = Arrays.copyOfRange(after, aStart, after.length);
+				System.out.println("ADDING DELTA(1): " + new Delta(bStart, bPos - bStart, additions));
+				deltas.add(new Delta(bStart, bPos - bStart, additions));
+				break;
+			} else if (mapping[bPos] > aPos) {
+				byte[] additions = Arrays.copyOfRange(after, aStart, mapping[bPos]);
+				System.out.println("ADDING DELTA(2): " + new Delta(bStart, bPos - bStart, additions));
+				deltas.add(new Delta(bStart, bPos - bStart, additions));
+				aStart = aPos = mapping[bPos] + 1;
+				bStart = bPos + 1;
+			} else if (mapping[bPos] == aPos) {
+				aStart = aPos = aPos + 1;
+				bStart = bPos + 1;
+			}  
+			bPos = bPos + 1;
+		}		
 		// Contruct final diff.
 		return new Diff(deltas.toArray(new Delta[deltas.size()]));
 	}
-	
-	private static Delta extractDelta(int[] mapping, int opos, int rpos, byte[] after) {
-		// Skip all matching bytes
-		while(opos < mapping.length && mapping[opos] == rpos) {
-			opos++;
-			rpos++;
-		}
-		// Extract delta
-		if (opos < mapping.length) {
-			int offset = opos;
-			while (opos < mapping.length && mapping[opos] < 0) {
-				opos++;
-			}
-			// Determine replacement bytes (if any)
-			if (opos < mapping.length) {
-				byte[] bytes = Arrays.copyOfRange(after, rpos, mapping[opos]);
-				return new Delta(offset, opos - offset, bytes);
-			} else {
-				byte[] bytes = Arrays.copyOfRange(after, rpos, after.length);
-				return new Delta(offset, opos - offset, bytes);
-			}
-		} else {
-			return null;
-		}
-	}
-	
+
 	/**
 	 * Check whether a given array of delta's are overlapping or not.
 	 * 
@@ -340,8 +331,8 @@ public class Diff implements Iterable<Diff.Delta> {
 	 * @return
 	 */
 	private static boolean disjoint(Delta[] deltas) {
-		Delta ithm1 = deltas[0];
 		for (int i = 1; i < deltas.length; ++i) {
+			Delta ithm1 = deltas[i-1];
 			Delta ith = deltas[i];
 			if (!ithm1.disjoint(ith)) {
 				return false;
@@ -398,6 +389,7 @@ public class Diff implements Iterable<Diff.Delta> {
 		}
 		// Finally, extract the LCS
 		int[] Z = new int[X.length];
+		Arrays.fill(Z, -1);
 		extractSubsequence(C, Z, m - 1, n - 1);
 		return Z;
 	}
@@ -421,6 +413,39 @@ public class Diff implements Iterable<Diff.Delta> {
 		} 
 	}
 
+	/**
+	 * Useful for debugging.
+	 * 
+	 * @param matrix
+	 * @param m
+	 * @param n
+	 */
+	private static void printMatrix(int[] matrix, int m, int n) {
+		System.out.print("   ");
+		for(int i=0;i<m;++i) {
+			System.out.print(String.format("%02d",i) + " ");
+		}
+		System.out.println();
+		System.out.print("  +");
+		for(int k=0;k<m;++k) {
+			System.out.print("--+");
+		}
+		System.out.println();
+		for(int j=0;j<n;++j) {
+			System.out.print(String.format("%02d|",j));
+			for(int i=0;i<m;++i) {
+				int ij = i + (j * m);
+				System.out.print(String.format("%02d|",matrix[ij]));
+			}
+			System.out.println();
+			System.out.print("  +");
+			for(int k=0;k<m;++k) {
+				System.out.print("--+");
+			}
+			System.out.println();
+		}
+	}
+	
 	private static void printDiff(byte[] X, byte[] Y) {
 		int[] Z = longestCommonSubsequence(X,Y);
 		int j = 0;
@@ -441,8 +466,8 @@ public class Diff implements Iterable<Diff.Delta> {
 	}
 
 	public static void main(String[] args) {
-		String before = "HELLO";
-		String after = "HElLO";
+		String before = "hello";
+		String after = "lo";
 		Diff d = construct(before, after);
 		System.out.println("DIFF: " + d);
 		System.out.println(before + " ==> " + after + " ... " + d.apply(before));

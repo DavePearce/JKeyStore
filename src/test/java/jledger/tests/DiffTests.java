@@ -125,6 +125,7 @@ public class DiffTests {
 		for (String after : permute(before, replacements)) {
 			// Construct corresponding diff
 			Diff diff = Diff.construct(before, after);
+			//
 			// Check number of replacements matches
 			assertEquals(n, diff.size());
 			// Check replacement matches
