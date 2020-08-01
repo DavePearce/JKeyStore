@@ -15,34 +15,133 @@ package jledger.tests;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import jledger.core.Value;
-import jledger.util.ByteArrayValue;
+import jledger.util.Diff;
 
+/**
+ * Tests for which <code>jledger.util.Diff</code> which are constructed from
+ * exhaustive enumerations of replacements over given strings.
+ * 
+ * @author David J. Pearce
+ *
+ */
 public class DiffTests {
 
 	@Test
 	public void test_01() {
-		
+		check("h","");
 	}
-
-	private static final String TEXT = "Hello to this crazy world!";
 	
+	@Test
+	public void test_02() {
+		check("h","1");
+	}
+	
+	@Test
+	public void test_03() {
+		check("h","12");
+	}
+	
+	@Test
+	public void test_04() {
+		check("he","");
+	}
+	
+	@Test
+	public void test_05() {
+		check("he","1");
+	}
+	
+	@Test
+	public void test_06() {
+		check("he","12");
+	}
+	
+	@Test
+	public void test_07() {
+		check("hello","");
+	}
+	
+	@Test
+	public void test_08() {
+		check("hello","1");
+	}
+	
+	@Test
+	public void test_09() {
+		check("hello","12");
+	}
+	
+	@Test
+	public void test_10() {
+		check("hello","","");
+	}
+	
+	@Test
+	public void test_11() {
+		check("hello","1","");
+	}
+	
+	@Test
+	public void test_12() {
+		check("hello","","1");
+	}
+	
+	@Test
+	public void test_13() {
+		check("hello","1","1");
+	}
+	
+	@Test
+	public void test_14() {
+		check("hello","12","");
+	}
+	
+	@Test
+	public void test_15() {
+		check("hello","12","1");
+	}
+	
+	@Test
+	public void test_16() {
+		check("hello","","12");
+	}
+	
+	@Test
+	public void test_17() {
+		check("hello","1","12");
+	}
+	
+	@Test
+	public void test_18() {
+		check("hello","12","12");
+	}
+	
+	private static void check(String before, String... replacements) {
+		final int n = replacements.length;
+		for (String after : permute(before, replacements)) {
+			// Construct corresponding diff
+			Diff diff = Diff.construct(before, after);
+			// Check number of replacements matches
+			assertEquals(n, diff.size());
+			// Check replacement matches
+			assertEquals(after, diff.apply(before));
+		}
+	}
 
 	/**
 	 * Generate all possible <i>nary</i> replacements for a given string using a
 	 * given set of replacements.
 	 * 
 	 * @param text         The base string on which replacements are made.
-	 * @param n            The number of replacements required.
 	 * @param replacements The sequence of replacement strings to use.
 	 * @return
 	 */
-	private static List<String> permute(String text, int n, String... replacements) {
+	private static List<String> permute(String text, String... replacements) {
+		final int n = replacements.length;
 		ArrayList<String> results = new ArrayList<>();
 		permute(new Replacement[n], 0, text, replacements, results);
 		return results;
@@ -110,8 +209,6 @@ public class DiffTests {
 		return text;
 	}
 	
-	
-	
 	/**
 	 * Represents a unit replacement for a given text sequence.
 	 * 
@@ -134,18 +231,11 @@ public class DiffTests {
 		}
 		
 		public int next() {
-			return start + length;
+			return (length == 0) ? (start + 1) : start + length;
 		}
 		
 		public String toString() {
 			return start + ":" + length + ":\"" + text + "\"";
 		}
-	}
-	
-	public static void main(String[] args) {
-		String text = "A";
-		for(String r : permute(text,2,"1","2")) {
-			System.out.println(r);
-		}
-	}
+	}	
 }
