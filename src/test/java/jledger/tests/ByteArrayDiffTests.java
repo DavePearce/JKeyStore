@@ -19,7 +19,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import jledger.util.Diff;
+import jledger.util.ByteArrayDiff;
 
 /**
  * Tests for which <code>jledger.util.Diff</code> which are constructed from
@@ -28,106 +28,105 @@ import jledger.util.Diff;
  * @author David J. Pearce
  *
  */
-public class DiffTests {
+public class ByteArrayDiffTests {
 
 	@Test
 	public void test_01() {
-		check("h","");
+		check("a","");
 	}
 	
 	@Test
 	public void test_02() {
-		check("h","1");
+		check("a","1");
 	}
 	
 	@Test
 	public void test_03() {
-		check("h","12");
+		check("a","12");
 	}
 	
 	@Test
 	public void test_04() {
-		check("he","");
+		check("ab","");
 	}
 	
 	@Test
 	public void test_05() {
-		check("he","1");
+		check("ab","1");
 	}
 	
 	@Test
 	public void test_06() {
-		check("he","12");
+		check("ab","12");
 	}
 	
 	@Test
 	public void test_07() {
-		check("hello","");
+		check("abcde","");
 	}
 	
 	@Test
 	public void test_08() {
-		check("hello","1");
+		check("abcde","1");
 	}
 	
 	@Test
 	public void test_09() {
-		check("hello","12");
+		check("abcde","12");
 	}
 	
 	@Test
 	public void test_10() {
-		check("hello","","");
+		check("abcde","","");
 	}
 	
 	@Test
 	public void test_11() {
-		check("hello","1","");
+		check("abcde","1","");
 	}
 	
 	@Test
 	public void test_12() {
-		check("hello","","1");
+		check("abcde","","1");
 	}
 	
 	@Test
 	public void test_13() {
-		check("hello","1","1");
+		check("abcde","1","1");
 	}
 	
 	@Test
 	public void test_14() {
-		check("hello","12","");
+		check("abcde","12","");
 	}
 	
 	@Test
 	public void test_15() {
-		check("hello","12","1");
+		check("abcde","12","1");
 	}
 	
 	@Test
 	public void test_16() {
-		check("hello","","12");
+		check("abcde","","12");
 	}
 	
 	@Test
 	public void test_17() {
-		check("hello","1","12");
+		check("abcde","1","12");
 	}
 	
 	@Test
 	public void test_18() {
-		check("hello","12","12");
+		check("abcde","12","12");
 	}
 	
 	private static void check(String before, String... replacements) {
 		final int n = replacements.length;
 		for (String after : permute(before, replacements)) {
 			// Construct corresponding diff
-			Diff diff = Diff.construct(before, after);
-			//
+			ByteArrayDiff diff = ByteArrayDiff.construct(before, after);
 			// Check number of replacements matches
-			assertEquals(n, diff.size());
+			assertTrue(diff.size() <= n);
 			// Check replacement matches
 			assertEquals(after, diff.apply(before));
 		}
