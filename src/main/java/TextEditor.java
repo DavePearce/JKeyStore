@@ -1,20 +1,35 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
+import javax.swing.WindowConstants;
+import javax.swing.border.Border;
 
 import jledger.util.ByteArrayDiff;
 
 public class TextEditor extends JFrame implements ActionListener {
+	private final Workspace.Project root;
+	/**
+	 * Encloses everything.
+	 */
 	private final JPanel outerpanel;
 	/**
 	 * Provides access to the menu.
@@ -27,23 +42,26 @@ public class TextEditor extends JFrame implements ActionListener {
 	/**
 	 * Provides access to the work area.
 	 */
-	private final JPanel workArea;
-	/**
-	 * Provides access to the status bar.
-	 */
-	private final JPanel statusBar;
-	/**
-	 * Access to the editor
-	 */
-	private JTextArea editor;
+	private final JTabbedPane workArea;
 
-	public TextEditor() {
+	private final JLabel statusView;
+	private final JLabel lineNumberView;
+	/**
+	 * List of active buffers
+	 */
+	private ArrayList<Buffer> buffers;
+
+	public TextEditor(Workspace.Project project) {
 		super("Simple Text Editor");
+		//
+		this.root = project;
+		statusView = new JLabel(" Status");
+		lineNumberView = new JLabel("0:0");
 		// Construct main components
 		this.menuBar = buildMenuBar();
 		this.toolBar = buildToolBar();
 		this.workArea = buildWorkArea();
-		this.statusBar = buildStatusBar();
+		JPanel statusBar = buildStatusBar();
 		// Configure the menu bar
 		setJMenuBar(menuBar);
 		// Configure layout
@@ -54,6 +72,7 @@ public class TextEditor extends JFrame implements ActionListener {
 		outerpanel.add(statusBar, BorderLayout.SOUTH);
 		getContentPane().add(outerpanel);
 		// Done
+		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		pack();
 		setVisible(true);
 	}
@@ -80,23 +99,28 @@ public class TextEditor extends JFrame implements ActionListener {
 	private JToolBar buildToolBar() {
 		// build tool bar
 		JToolBar toolBar = new JToolBar("Toolbar");
+		toolBar.add(makeToolbarButton("Save file", "New"));
+		toolBar.add(makeToolbarButton("Save file", "Open"));
 		toolBar.add(makeToolbarButton("Save file", "Save"));
-
+		//
 		return toolBar;
 	}
 
-	private JPanel buildWorkArea() {
-		editor = new JTextArea(20,50);
-		JPanel panel = new JPanel();
-		panel.setBorder(BorderFactory.createEmptyBorder(2,2,2,2));
-		panel.add(editor);
-		return panel;
+	private JTabbedPane buildWorkArea() {
+		JTabbedPane tp = new JTabbedPane();
+		for (String file : root.list()) {
+			Buffer buffer = new Buffer(new String(root.read(file)));
+			tp.addTab(file, buffer);
+		}
+		return tp;
 	}
 
 	private JPanel buildStatusBar() {
-		// build the status bar.
 		JPanel panel = new JPanel();
 		panel.setLayout(new BorderLayout());
+		panel.add(statusView, BorderLayout.WEST);
+		panel.add(lineNumberView, BorderLayout.EAST);
+		panel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 		return panel;
 	}
 
@@ -118,17 +142,103 @@ public class TextEditor extends JFrame implements ActionListener {
 	}
 
 	public static void main(String[] args) {
-		new TextEditor();
-	}
+		new TextEditor(new Workspace.Project() {
+			private HashMap<String, String> files = new HashMap<>();
 
-	private String last = "";
+			{
+				files.put("main.whiley",
+						"function abs(int x) -> (int r)\nensures r >= 0:\n   if x < 0:\n      return -x\n   else:\n      return x");
+				files.put("debug.whiley", "final int x = 0");
+			}
+
+			@Override
+			public String[] list() {
+				return new String[] { "main.whiley", "debug.whiley" };
+			}
+
+			@Override
+			public void create(String name) {
+				if (files.containsKey(name)) {
+					throw new IllegalArgumentException();
+				}
+				files.put(name, "");
+			}
+
+			@Override
+			public void write(String name, String contents) {
+				if (!files.containsKey(name)) {
+					throw new IllegalArgumentException();
+				}
+				files.put(name, contents);
+			}
+
+			@Override
+			public String read(String name) {
+				if (!files.containsKey(name)) {
+					throw new IllegalArgumentException();
+				}
+				return files.get(name);
+			}
+
+		});
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		String after = editor.getText();
-		ByteArrayDiff diff = ByteArrayDiff.construct(last,after);
-		//
-		System.out.println("DIFF: " + diff);
-		last = after;
+		if(e.getActionCommand().equals("Save")) {
+			for(int i=0;i!=workArea.getTabCount();++i) {
+				String file = workArea.getTitleAt(i);
+				Buffer b = (Buffer) workArea.getComponentAt(i);
+				if(b.isDirty()) {
+					System.out.println("WRITING: " + file);
+					root.write(file, b.getText());
+					b.reset();
+				}
+			}
+		}
+	}
+
+
+	private static class Buffer extends JPanel implements KeyListener {
+		private final JTextArea buffer;
+		private boolean dirty = false;
+
+		public Buffer(String contents) {
+			super();
+			this.buffer = new JTextArea();
+			this.buffer.setText(contents);
+			this.buffer.setFont(new Font("Courier New",Font.PLAIN,16));
+			this.buffer.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+			this.buffer.addKeyListener(this);
+			this.setLayout(new BorderLayout());
+			this.add(new JScrollPane(buffer), BorderLayout.CENTER);
+		}
+
+		public boolean isDirty() {
+			return dirty;
+		}
+
+		public void reset() {
+			dirty = false;
+		}
+
+		public String getText() {
+			return buffer.getText();
+		}
+
+		@Override
+		public void keyTyped(KeyEvent e) {
+			dirty = true;
+		}
+
+		@Override
+		public void keyPressed(KeyEvent e) {
+			dirty = true;
+		}
+
+		@Override
+		public void keyReleased(KeyEvent e) {
+			dirty = true;
+		}
 	}
 }
