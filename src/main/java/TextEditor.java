@@ -1,11 +1,9 @@
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.BorderFactory;
@@ -23,7 +21,7 @@ import javax.swing.JToolBar;
 import javax.swing.WindowConstants;
 
 public class TextEditor extends JFrame implements ActionListener {
-	private final Workspace.Project root;
+	private final LanguageServer.Project root;
 	/**
 	 * Encloses everything.
 	 */
@@ -44,7 +42,7 @@ public class TextEditor extends JFrame implements ActionListener {
 	private final JLabel statusView;
 	private final JLabel lineNumberView;
 
-	public TextEditor(Workspace.Project project) {
+	public TextEditor(LanguageServer.Project project) {
 		super("Simple Text Editor");
 		//
 		this.root = project;
@@ -135,7 +133,7 @@ public class TextEditor extends JFrame implements ActionListener {
 	}
 
 	public static void main(String[] args) {
-		new TextEditor(new Workspace.Project() {
+		new TextEditor(new LanguageServer.Project() {
 			private HashMap<String, String> files = new HashMap<>();
 
 			{
