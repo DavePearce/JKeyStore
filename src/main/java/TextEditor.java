@@ -21,9 +21,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.WindowConstants;
-import javax.swing.border.Border;
-
-import jledger.util.ByteArrayDiff;
 
 public class TextEditor extends JFrame implements ActionListener {
 	private final Workspace.Project root;
@@ -46,10 +43,6 @@ public class TextEditor extends JFrame implements ActionListener {
 
 	private final JLabel statusView;
 	private final JLabel lineNumberView;
-	/**
-	 * List of active buffers
-	 */
-	private ArrayList<Buffer> buffers;
 
 	public TextEditor(Workspace.Project project) {
 		super("Simple Text Editor");
@@ -190,7 +183,6 @@ public class TextEditor extends JFrame implements ActionListener {
 				String file = workArea.getTitleAt(i);
 				Buffer b = (Buffer) workArea.getComponentAt(i);
 				if(b.isDirty()) {
-					System.out.println("WRITING: " + file);
 					root.write(file, b.getText());
 					b.reset();
 				}
@@ -198,7 +190,12 @@ public class TextEditor extends JFrame implements ActionListener {
 		}
 	}
 
-
+	/**
+	 * Represents an open buffer of text which is currently being edited.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
 	private static class Buffer extends JPanel implements KeyListener {
 		private final JTextArea buffer;
 		private boolean dirty = false;
