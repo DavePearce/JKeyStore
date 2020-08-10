@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import javax.swing.BorderFactory;
@@ -20,8 +21,10 @@ import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.WindowConstants;
 
+import jledger.util.ByteArrayDiff;
+
 public class TextEditor extends JFrame implements ActionListener {
-	private final LanguageServer.Project root;
+	private final LanguageServer.Workspace root;
 	/**
 	 * Encloses everything.
 	 */
@@ -42,10 +45,10 @@ public class TextEditor extends JFrame implements ActionListener {
 	private final JLabel statusView;
 	private final JLabel lineNumberView;
 
-	public TextEditor(LanguageServer.Project project) {
+	public TextEditor(LanguageServer.Workspace workspace) {
 		super("Simple Text Editor");
 		//
-		this.root = project;
+		this.root = workspace;
 		statusView = new JLabel(" Status");
 		lineNumberView = new JLabel("0:0");
 		// Construct main components
@@ -132,48 +135,6 @@ public class TextEditor extends JFrame implements ActionListener {
 		return button;
 	}
 
-	public static void main(String[] args) {
-		new TextEditor(new LanguageServer.Project() {
-			private HashMap<String, String> files = new HashMap<>();
-
-			{
-				files.put("main.whiley",
-						"function abs(int x) -> (int r)\nensures r >= 0:\n   if x < 0:\n      return -x\n   else:\n      return x");
-				files.put("debug.whiley", "final int x = 0");
-			}
-
-			@Override
-			public String[] list() {
-				return new String[] { "main.whiley", "debug.whiley" };
-			}
-
-			@Override
-			public void create(String name) {
-				if (files.containsKey(name)) {
-					throw new IllegalArgumentException();
-				}
-				files.put(name, "");
-			}
-
-			@Override
-			public void write(String name, String contents) {
-				if (!files.containsKey(name)) {
-					throw new IllegalArgumentException();
-				}
-				files.put(name, contents);
-			}
-
-			@Override
-			public String read(String name) {
-				if (!files.containsKey(name)) {
-					throw new IllegalArgumentException();
-				}
-				return files.get(name);
-			}
-
-		});
-	}
-
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getActionCommand().equals("Save")) {
@@ -235,5 +196,95 @@ public class TextEditor extends JFrame implements ActionListener {
 		public void keyReleased(KeyEvent e) {
 			dirty = true;
 		}
+	}
+
+
+	public static void main(String[] args) {
+		new TextEditor(new Workspace());
+	}
+
+	private static class Workspace implements LanguageServer.Workspace {
+		private Project project = new Project();
+
+		@Override
+		public LanguageServer.Project[] list() {
+			return new LanguageServer.Project[] {project};
+		}
+
+		@Override
+		public LanguageServer.Project create(String name) {
+			throw new IllegalArgumentException();
+		}
+
+		@Override
+		public void close() {
+			throw new IllegalArgumentException();
+		}
+
+		@Override
+		public void flush() {
+			throw new IllegalArgumentException();
+		}
+
+	}
+
+	private static class Project implements LanguageServer.Project {
+		private File[] files;
+
+		public Project() {
+			String contents = "function f(int x) -> int r:";
+			this.files = new File[] { new File(contents.getBytes()) };
+		}
+
+		@Override
+		public File[] list() {
+			return files;
+		}
+
+		@Override
+		public File create(String name) {
+			throw new IllegalArgumentException();
+		}
+
+	}
+
+	private static class File implements LanguageServer.File {
+		private byte[] data;
+
+		public File(byte[] data) {
+			this.data = Arrays.copyOf(data, data.length);
+		}
+
+		@Override
+		public void delete() {
+			throw new IllegalArgumentException();
+		}
+
+		@Override
+		public void write(byte[] contents) {
+			throw new IllegalArgumentException();
+		}
+
+		@Override
+		public void write(ByteArrayDiff diff) {
+			throw new IllegalArgumentException();
+		}
+
+		@Override
+		public byte[] read() {
+			return bytes;
+		}
+
+		@Override
+		public byte[] read(int offset, int length) {
+			throw new IllegalArgumentException();
+		}
+
+		@Override
+		public void read(int srcOffset, byte[] dest, int dstOffset, int length) {
+			// TODO Auto-generated method stub
+
+		}
+
 	}
 }
