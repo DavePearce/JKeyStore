@@ -4,8 +4,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -16,15 +18,26 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
+import javax.swing.JTree;
 import javax.swing.WindowConstants;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreePath;
 
 import jledger.util.ByteArrayDiff;
 
-public class TextEditor extends JFrame implements ActionListener {
+public class TextEditor extends JFrame implements TreeSelectionListener, ActionListener, MouseListener {
 	private final LanguageServer.Workspace root;
+	/**
+	 * List of open files
+	 */
+	private final ArrayList<LanguageServer.File> files;
 	/**
 	 * Encloses everything.
 	 */
@@ -38,6 +51,10 @@ public class TextEditor extends JFrame implements ActionListener {
 	 */
 	private final JToolBar toolBar;
 	/**
+	 * Provides access to the files in the workspace.
+	 */
+	private final JTree fileView;
+	/**
 	 * Provides access to the work area.
 	 */
 	private final JTabbedPane workArea;
@@ -49,11 +66,13 @@ public class TextEditor extends JFrame implements ActionListener {
 		super("Simple Text Editor");
 		//
 		this.root = workspace;
+		this.files = new ArrayList<>();
 		statusView = new JLabel(" Status");
 		lineNumberView = new JLabel("0:0");
 		// Construct main components
 		this.menuBar = buildMenuBar();
 		this.toolBar = buildToolBar();
+		this.fileView = buildFileView();
 		this.workArea = buildWorkArea();
 		JPanel statusBar = buildStatusBar();
 		// Configure the menu bar
@@ -62,7 +81,8 @@ public class TextEditor extends JFrame implements ActionListener {
 		outerpanel = new JPanel();
 		outerpanel.setLayout(new BorderLayout());
 		outerpanel.add(toolBar, BorderLayout.PAGE_START);
-		outerpanel.add(workArea, BorderLayout.CENTER);
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,fileView,workArea);
+		outerpanel.add(splitPane, BorderLayout.CENTER);
 		outerpanel.add(statusBar, BorderLayout.SOUTH);
 		getContentPane().add(outerpanel);
 		// Done
@@ -100,11 +120,28 @@ public class TextEditor extends JFrame implements ActionListener {
 		return toolBar;
 	}
 
+	private JTree buildFileView() {
+		LanguageServer.Project[] projects = root.list();
+		DefaultMutableTreeNode top = new DefaultMutableTreeNode("Workspace");
+		for(int i=0;i!=projects.length;++i) {
+			DefaultMutableTreeNode node = new DefaultMutableTreeNode("A project");
+			for(LanguageServer.File f : projects[i].list()) {
+				node.add(new DefaultMutableTreeNode(new FileInfo(f)));
+			}
+			top.add(node);
+		}
+		JTree tree = new JTree(top);
+		tree.setRootVisible(false);
+		tree.addTreeSelectionListener(this);
+		tree.addMouseListener(this);
+		return tree;
+	}
+
 	private JTabbedPane buildWorkArea() {
 		JTabbedPane tp = new JTabbedPane();
-		for (String file : root.list()) {
-			Buffer buffer = new Buffer(new String(root.read(file)));
-			tp.addTab(file, buffer);
+		for (LanguageServer.File file : files) {
+			Buffer buffer = new Buffer(new String(file.read()));
+			tp.addTab("file.whiley", buffer);
 		}
 		return tp;
 	}
@@ -135,17 +172,80 @@ public class TextEditor extends JFrame implements ActionListener {
 		return button;
 	}
 
+	public void openFile(LanguageServer.File file) {
+		Buffer buffer = new Buffer(new String(file.read()));
+		workArea.addTab("file.whiley", buffer);
+		files.add(file);
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if(e.getActionCommand().equals("Save")) {
 			for(int i=0;i!=workArea.getTabCount();++i) {
-				String file = workArea.getTitleAt(i);
+				LanguageServer.File file = files.get(i);
 				Buffer b = (Buffer) workArea.getComponentAt(i);
 				if(b.isDirty()) {
-					root.write(file, b.getText());
+					file.write(b.getText().getBytes());
 					b.reset();
 				}
 			}
+		}
+	}
+
+	@Override
+	public void valueChanged(TreeSelectionEvent arg0) {
+
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		int row = fileView.getRowForLocation(e.getX(),e.getY());
+		TreePath path = fileView.getPathForLocation(e.getX(), e.getY());
+		if(row != -1 && e.getClickCount() == 2 && path.getPathCount() == 3) {
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+			FileInfo info = (FileInfo) node.getUserObject();
+			openFile(info.getFile());
+		}
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void mouseExited(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+
+	}
+
+	private class FileInfo {
+		private final LanguageServer.File file;
+
+		public FileInfo(LanguageServer.File file) {
+			this.file = file;
+		}
+
+		public LanguageServer.File getFile() {
+			return file;
+		}
+
+		@Override
+		public String toString() {
+			return "a file";
 		}
 	}
 
@@ -262,7 +362,8 @@ public class TextEditor extends JFrame implements ActionListener {
 
 		@Override
 		public void write(byte[] contents) {
-			throw new IllegalArgumentException();
+			System.out.println("WRITING CONTENTS");
+			this.data = contents;
 		}
 
 		@Override
@@ -272,7 +373,7 @@ public class TextEditor extends JFrame implements ActionListener {
 
 		@Override
 		public byte[] read() {
-			return bytes;
+			return data;
 		}
 
 		@Override
@@ -287,4 +388,5 @@ public class TextEditor extends JFrame implements ActionListener {
 		}
 
 	}
+
 }
