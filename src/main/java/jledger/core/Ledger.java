@@ -13,63 +13,35 @@
 // limitations under the License.
 package jledger.core;
 
-import jledger.util.Pair;
-
 /**
- * Represents an immutable transaction ledger. That is a sequence of zero or
- * more transactions which can be appended.
+ * Represents a versioned object implemented using an immutable transaction
+ * ledger.
  *
  * @author David J. Pearce
  *
- * @param <K>
- * @param <V>
  * @param <T>
  */
-public interface Ledger<K,V extends Value.Interned<K, V>> {
-
+public interface Ledger<T extends Content.Proxy> {
 	/**
-	 * Get the current value associated with a given key.
-	 * @return
-	 */
-	public V get(K key);
-
-	/**
-	 * Get the current value associated with a given key at a given timestamp.
-	 * 
-	 * @return
-	 */
-	public V get(int timestamp, K key);
-	
-	/**
-	 * Check whether a given key exists in the ledger or not. If it does exist, then
-	 * return that.
-	 * 
-	 * @param key String representation of the key.
-	 * @return The key itself, or <code>null</code> if the key doesn't exist.
-	 */
-	public K lookup(String key);
-	
-	/**
-	 * Add a new key to the ledger corresponding to a given string.
-	 * 
-	 * @param key
-	 * @return
-	 */
-	public K add(String key);
-	
-	/**
-	 * Add a new value to the ledger producing an interned value which can be used
-	 * for transactions on this ledger.
-	 * 
-	 * @param value
-	 * @return
-	 */
-	public V add(Value value);
-	
-	/**
-	 * Apply a sequence of key/value assignments as a single atomic transaction.
+	 * Get the number of versions currently stored in this ledger.
 	 *
-	 * @param t
+	 * @return
 	 */
-	public void add(Pair<K, V>... txn);
+	public int versions();
+
+	/**
+	 * Get the current state at a given timestamp.
+	 *
+	 * @return
+	 */
+	public T get(int timestamp);
+
+	/**
+	 * Write a new version of the object into this ledger. This increases the number
+	 * of versions by one. Observe that this could lead to a concurrent modification
+	 * error if objects are written out of sequence.
+	 *
+	 * @param object
+	 */
+	public void put(T object);
 }
