@@ -1,7 +1,5 @@
 package jledger.core;
 
-import jledger.core.Value.Delta;
-
 public class Content {
 
 	/**
@@ -11,12 +9,7 @@ public class Content {
 	 *
 	 */
 	public interface Proxy {
-		/**
-		 * Get the value which underpins this proxy object.
-		 *
-		 * @return
-		 */
-		Blob getContents();
+		// what goes here?
 	}
 
 	/**
@@ -26,14 +19,22 @@ public class Content {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Layout {
+	public interface Layout<T extends Proxy> {
 		/**
-		 * Identify the blocks within this layout.
+		 * Decode a given binary blob into a proxy object according to this layout.
 		 *
+		 * @param blob The raw data making up the representation of this object.
 		 * @return
 		 */
-		public Block[] blocks();
+		public T decode(Blob blob);
 
+		/**
+		 * Encode a given proxy object into a binary blob according to this layout.
+		 *
+		 * @param object
+		 * @return
+		 */
+		public Blob encode(T object);
 	}
 
 	/**

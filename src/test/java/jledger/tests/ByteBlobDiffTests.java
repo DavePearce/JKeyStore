@@ -14,19 +14,31 @@
 package jledger.tests;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import jledger.core.Value;
-import jledger.util.ByteArrayValue;
+import jledger.core.Content;
+import jledger.util.ByteBlob;
 
-public class ByteArrayValueTests {
+/**
+ * Tests for which <code>jledger.util.Diff</code> which are constructed from
+ * exhaustive enumerations of replacements over given strings.
+ *
+ * @author David J. Pearce
+ *
+ */
+public class ByteBlobDiffTests {
+
+	// ===================================================================
+	// Core Tests
+	// ===================================================================
 
 	@Test
 	public void test_01() {
 		byte[] bs1 = "Hello World".getBytes();
-		ByteArrayValue v1 = new ByteArrayValue(bs1);
+		ByteBlob v1 = new ByteBlob(bs1);
 		assertEquals(v1.size(),11);
 		assertEquals(v1.get(),bs1);
 		for (int i = 0; i != bs1.length; ++i) {
@@ -37,8 +49,8 @@ public class ByteArrayValueTests {
 	@Test
 	public void test_02() {
 		byte[] bs1 = "hello world".getBytes();
-		Value v = new ByteArrayValue(bs1);
-		Value[] vs = new Value[11];
+		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of writes
 		vs[0] = v.write(0, (byte) 'H');
 		vs[1] = v.write(1, (byte) 'E');
@@ -62,7 +74,7 @@ public class ByteArrayValueTests {
 		assertEquals(v.size(),vs[7].size());
 		assertEquals(v.size(),vs[8].size());
 		assertEquals(v.size(),vs[9].size());
-		assertEquals(v.size(),vs[10].size());		
+		assertEquals(v.size(),vs[10].size());
 		// Check character change as expected
 		assertArrayEquals("Hello world".getBytes(),vs[0].get());
 		assertArrayEquals("hEllo world".getBytes(),vs[1].get());
@@ -74,14 +86,14 @@ public class ByteArrayValueTests {
 		assertArrayEquals("hello wOrld".getBytes(),vs[7].get());
 		assertArrayEquals("hello woRld".getBytes(),vs[8].get());
 		assertArrayEquals("hello worLd".getBytes(),vs[9].get());
-		assertArrayEquals("hello worlD".getBytes(),vs[10].get());		
+		assertArrayEquals("hello worlD".getBytes(),vs[10].get());
 	}
-	
+
 	@Test
 	public void test_03() {
 		byte[] bs1 = "hello world".getBytes();
-		Value v = new ByteArrayValue(bs1);
-		Value[] vs = new Value[11];
+		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of replacements
 		vs[0] = v.replace(0, 1, "H".getBytes());
 		vs[1] = v.replace(1, 1, "E".getBytes());
@@ -105,7 +117,7 @@ public class ByteArrayValueTests {
 		assertEquals(v.size(),vs[7].size());
 		assertEquals(v.size(),vs[8].size());
 		assertEquals(v.size(),vs[9].size());
-		assertEquals(v.size(),vs[10].size());		
+		assertEquals(v.size(),vs[10].size());
 		// Check character change as expected
 		assertArrayEquals("Hello world".getBytes(),vs[0].get());
 		assertArrayEquals("hEllo world".getBytes(),vs[1].get());
@@ -117,14 +129,14 @@ public class ByteArrayValueTests {
 		assertArrayEquals("hello wOrld".getBytes(),vs[7].get());
 		assertArrayEquals("hello woRld".getBytes(),vs[8].get());
 		assertArrayEquals("hello worLd".getBytes(),vs[9].get());
-		assertArrayEquals("hello worlD".getBytes(),vs[10].get());		
+		assertArrayEquals("hello worlD".getBytes(),vs[10].get());
 	}
-	
+
 	@Test
 	public void test_04() {
 		byte[] bs1 = "hello world".getBytes();
-		Value v = new ByteArrayValue(bs1);
-		Value[] vs = new Value[11];
+		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of replacements
 		vs[0] = v.replace(0, 1, "Hh".getBytes());
 		vs[1] = v.replace(1, 1, "Ee".getBytes());
@@ -148,7 +160,7 @@ public class ByteArrayValueTests {
 		assertEquals(v.size()+1,vs[7].size());
 		assertEquals(v.size()+1,vs[8].size());
 		assertEquals(v.size()+1,vs[9].size());
-		assertEquals(v.size()+1,vs[10].size());		
+		assertEquals(v.size()+1,vs[10].size());
 		// Check character change as expected
 		assertArrayEquals("Hhello world".getBytes(),vs[0].get());
 		assertArrayEquals("hEello world".getBytes(),vs[1].get());
@@ -160,14 +172,14 @@ public class ByteArrayValueTests {
 		assertArrayEquals("hello wOorld".getBytes(),vs[7].get());
 		assertArrayEquals("hello woRrld".getBytes(),vs[8].get());
 		assertArrayEquals("hello worLld".getBytes(),vs[9].get());
-		assertArrayEquals("hello worlDd".getBytes(),vs[10].get());		
+		assertArrayEquals("hello worlDd".getBytes(),vs[10].get());
 	}
-	
+
 	@Test
 	public void test_05() {
 		byte[] bs1 = "hello world".getBytes();
-		Value v = new ByteArrayValue(bs1);
-		Value[] vs = new Value[11];
+		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of replacements
 		vs[0] = v.replace(0, 1, "HhH".getBytes());
 		vs[1] = v.replace(1, 1, "EeE".getBytes());
@@ -191,7 +203,7 @@ public class ByteArrayValueTests {
 		assertEquals(v.size()+2,vs[7].size());
 		assertEquals(v.size()+2,vs[8].size());
 		assertEquals(v.size()+2,vs[9].size());
-		assertEquals(v.size()+2,vs[10].size());		
+		assertEquals(v.size()+2,vs[10].size());
 		// Check character change as expected
 		assertArrayEquals("HhHello world".getBytes(),vs[0].get());
 		assertArrayEquals("hEeEllo world".getBytes(),vs[1].get());
@@ -203,14 +215,14 @@ public class ByteArrayValueTests {
 		assertArrayEquals("hello wOoOrld".getBytes(),vs[7].get());
 		assertArrayEquals("hello woRrRld".getBytes(),vs[8].get());
 		assertArrayEquals("hello worLlLd".getBytes(),vs[9].get());
-		assertArrayEquals("hello worlDdD".getBytes(),vs[10].get());		
+		assertArrayEquals("hello worlDdD".getBytes(),vs[10].get());
 	}
-	
+
 	@Test
 	public void test_06() {
 		byte[] bs1 = "hello world".getBytes();
-		Value v = new ByteArrayValue(bs1);
-		Value[] vs = new Value[10];
+		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob[] vs = new Content.Blob[10];
 		// A bunch of replacements
 		vs[0] = v.replace(0, 2, "H".getBytes());
 		vs[1] = v.replace(1, 2, "E".getBytes());
@@ -232,7 +244,7 @@ public class ByteArrayValueTests {
 		assertEquals(v.size()-1,vs[6].size());
 		assertEquals(v.size()-1,vs[7].size());
 		assertEquals(v.size()-1,vs[8].size());
-		assertEquals(v.size()-1,vs[9].size());		
+		assertEquals(v.size()-1,vs[9].size());
 		// Check character change as expected
 		assertArrayEquals("Hllo world".getBytes(),vs[0].get());
 		assertArrayEquals("hElo world".getBytes(),vs[1].get());
@@ -243,6 +255,220 @@ public class ByteArrayValueTests {
 		assertArrayEquals("hello Wrld".getBytes(),vs[6].get());
 		assertArrayEquals("hello wOld".getBytes(),vs[7].get());
 		assertArrayEquals("hello woRd".getBytes(),vs[8].get());
-		assertArrayEquals("hello worL".getBytes(),vs[9].get());		
+		assertArrayEquals("hello worL".getBytes(),vs[9].get());
+	}
+
+	// ===================================================================
+	// Diff Tests
+	// ===================================================================
+
+	@Test
+	public void test_diff_01() {
+		check("a","");
+	}
+
+	@Test
+	public void test_diff_02() {
+		check("a","1");
+	}
+
+	@Test
+	public void test_diff_03() {
+		check("a","12");
+	}
+
+	@Test
+	public void test_diff_04() {
+		check("ab","");
+	}
+
+	@Test
+	public void test_diff_05() {
+		check("ab","1");
+	}
+
+	@Test
+	public void test_diff_06() {
+		check("ab","12");
+	}
+
+	@Test
+	public void test_diff_07() {
+		check("abcde","");
+	}
+
+	@Test
+	public void test_diff_08() {
+		check("abcde","1");
+	}
+
+	@Test
+	public void test_diff_09() {
+		check("abcde","12");
+	}
+
+	@Test
+	public void test_diff_10() {
+		check("abcde","","");
+	}
+
+	@Test
+	public void test_diff_11() {
+		check("abcde","1","");
+	}
+
+	@Test
+	public void test_diff_12() {
+		check("abcde","","1");
+	}
+
+	@Test
+	public void test_diff_13() {
+		check("abcde","1","1");
+	}
+
+	@Test
+	public void test_diff_14() {
+		check("abcde","12","");
+	}
+
+	@Test
+	public void test_diff_15() {
+		check("abcde","12","1");
+	}
+
+	@Test
+	public void test_diff_16() {
+		check("abcde","","12");
+	}
+
+	@Test
+	public void test_diff_17() {
+		check("abcde","1","12");
+	}
+
+	@Test
+	public void test_diff_18() {
+		check("abcde","12","12");
+	}
+
+	private static void check(String before, String... replacements) {
+		final int n = replacements.length;
+		for (String after : permute(before, replacements)) {
+			// Construct corresponding diff
+			ByteBlob.Diff diff = ByteBlob.diff(before.getBytes(), after.getBytes());
+			// Check number of replacements matches
+			assertTrue(diff.count() <= n);
+			// Check replacement matches
+			assertEquals(after, new String(diff.get()));
+		}
+	}
+
+	/**
+	 * Generate all possible <i>nary</i> replacements for a given string using a
+	 * given set of replacements.
+	 *
+	 * @param text         The base string on which replacements are made.
+	 * @param replacements The sequence of replacement strings to use.
+	 * @return
+	 */
+	private static List<String> permute(String text, String... replacements) {
+		final int n = replacements.length;
+		ArrayList<String> results = new ArrayList<>();
+		permute(new Replacement[n], 0, text, replacements, results);
+		return results;
+	}
+
+	private static void permute(Replacement[] root, int i, String text, String[] replacements,
+			List<String> results) {
+		if (i == root.length) {
+			results.add(replace(text, root));
+		} else {
+			// Determine starting position
+			int start = (i == 0) ? 0 : root[i - 1].next();
+			//
+			for (Replacement r : permuteSingle(text, start, replacements[i])) {
+				root[i] = r;
+				permute(root, i + 1, text, replacements, results);
+			}
+		}
+	}
+
+	/**
+	 * Generate all possible unit replacements for a given string and a given
+	 * replacement string.
+	 *
+	 * @param text
+	 * @return
+	 */
+	private static List<Replacement> permuteSingle(String text, int start, String replacement) {
+		ArrayList<Replacement> rs = new ArrayList<>();
+		for (; start <= text.length(); ++start) {
+			// Calculate maximum size of region
+			int rem = text.length() - start;
+			// Enumerate all possible replacement regions
+			for (int length = 0; length <= rem; ++length) {
+				if(length != 0 || replacement.length() != 0) {
+					rs.add(new Replacement(start, length, replacement));
+				}
+			}
+		}
+		return rs;
+	}
+
+
+	/**
+	 * Apply a given sequence of replacements to a given text string.
+	 *
+	 * @param text
+	 * @param root
+	 * @return
+	 */
+	private static String replace(String text, Replacement... root) {
+		int delta = 0;
+		//
+		for (int i = 0; i != root.length; ++i) {
+			Replacement r = root[i];
+			int start = r.start + delta;
+			// NOTE: could be way more efficient!!
+			String before = text.substring(0,start);
+			String after = text.substring(start + r.length);
+			text = before + r.text + after;
+			// JUpdate delta
+			delta += r.text.length() - r.length;
+		}
+		//
+		return text;
+	}
+
+	/**
+	 * Represents a unit replacement for a given text sequence.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private static final class Replacement {
+		public final int start;
+		public final int length;
+		public final String text;
+
+		public Replacement(int start, int length, String text) {
+			// Sanity check what is generated
+			if(text.length() == 0 && length == 0) {
+				throw new IllegalArgumentException("invalid replacement");
+			}
+			this.start = start;
+			this.length = length;
+			this.text = text;
+		}
+
+		public int next() {
+			return (length == 0) ? (start + 1) : start + length;
+		}
+
+		@Override
+		public String toString() {
+			return start + ":" + length + ":\"" + text + "\"";
+		}
 	}
 }

@@ -4,14 +4,14 @@ import jledger.core.Content;
 import jledger.core.Ledger;
 
 public class DumbLedger<T extends Content.Proxy> implements Ledger<T> {
-	private final Content.Layout layout;
+	private final Content.Layout<T> layout;
 
 	private int length;
-	private byte[][] ledger;
+	private Content.Blob[] ledger;
 
-	public DumbLedger(Content.Layout layout, int capacity) {
+	public DumbLedger(Content.Layout<T> layout, int capacity) {
 		this.layout = layout;
-		this.ledger = new byte[capacity][];
+		this.ledger = new Content.Blob[capacity];
 	}
 
 	@Override
@@ -21,7 +21,10 @@ public class DumbLedger<T extends Content.Proxy> implements Ledger<T> {
 
 	@Override
 	public T get(int timestamp) {
-		throw new IllegalArgumentException();
+		// Get the blob at the given timestamp
+		Content.Blob blob = ledger[timestamp];
+		// Decode it
+		return layout.decode(blob);
 	}
 
 	@Override
@@ -29,21 +32,8 @@ public class DumbLedger<T extends Content.Proxy> implements Ledger<T> {
 		// At this point, need to determine diff against previous version of the object.
 		// Also need to check sequence is correct as well? Well, if they don't interfere
 		// then can fast forward.
-		//
-		// Actually, only need to be able to convert object into a string of bytes in
-		// this case.
-		Content.Blob blob = object.getContents();
 		// Write new blob into ledger
-		ledger[length++] = blob.get();
+		ledger[length++] = layout.encode(object);
 		// Done
-
-		// Should proxy object return a blob?
-		//
-		// Or should proxy object contain list of modifications and, using layout, we
-		// convert these into a blob.
-		//
-		// We want to be able to interact with the proxy object quite efficiently. For
-		// example, when traversing a method and changing all the type information then
-		// still need to be able to read structure, etc.
 	}
 }
