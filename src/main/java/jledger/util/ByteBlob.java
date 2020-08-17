@@ -21,7 +21,7 @@ import jledger.core.Content;
 import jledger.core.Content.Blob;
 
 /**
-  *
+ *
  * @author David J. Pearce
  *
  */
@@ -72,6 +72,11 @@ public class ByteBlob implements Content.Blob {
 		List<Replacement> deltas = extractDeltas(mapping, after);
 		// Contruct final diff.
 		return new Diff(new ByteBlob(before), deltas.toArray(new Replacement[deltas.size()]));
+	}
+
+	@Override
+	public String toString() {
+		return Arrays.toString(bytes);
 	}
 
 	/**
@@ -159,12 +164,14 @@ public class ByteBlob implements Content.Blob {
 
 		@Override
 		public Diff write(int index, byte b) {
-			throw new IllegalArgumentException("GOT HERE");
+			// NOTE: compress diffs?
+			return new Diff(this, new Replacement(index, 1, b));
 		}
 
 		@Override
 		public Diff replace(int index, int length, byte... bytes) {
-			throw new IllegalArgumentException("GOT HERE");
+			// NOTE: compress diffs?
+			return new Diff(this, new Replacement(index, length, bytes));
 		}
 
 		@Override

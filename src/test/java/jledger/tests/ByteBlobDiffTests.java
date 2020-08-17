@@ -15,6 +15,7 @@ package jledger.tests;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -256,6 +257,66 @@ public class ByteBlobDiffTests {
 		assertArrayEquals("hello wOld".getBytes(),vs[7].get());
 		assertArrayEquals("hello woRd".getBytes(),vs[8].get());
 		assertArrayEquals("hello worL".getBytes(),vs[9].get());
+	}
+
+	// ===================================================================
+	// Multi Tests
+	// ===================================================================
+
+	@Test
+	public void test_multi_01() {
+		byte[] bs1 = "hello world".getBytes();
+		byte[] bs2 = "HELLO WORLD".getBytes();
+		checkMutants(bs1, bs2, 1);
+	}
+
+	@Test
+	public void test_multi_02() {
+		byte[] bs1 = "hello world".getBytes();
+		byte[] bs2 = "HELLO WORLD".getBytes();
+		checkMutants(bs1, bs2, 2);
+	}
+
+	@Test
+	public void test_multi_03() {
+		byte[] bs1 = "hello world".getBytes();
+		byte[] bs2 = "HELLO WORLD".getBytes();
+		checkMutants(bs1, bs2, 2);
+	}
+
+	private static void checkMutants(byte[] source, byte[] target, int n) {
+		Content.Blob[] mutants = new Content.Blob[] { new ByteBlob(source) };
+		//
+		for (int i = 0; i != n; ++i) {
+			mutants = mutate(target, mutants);
+		}
+		// Sanity check mutants
+		for (Content.Blob b : mutants) {
+			byte[] bs = b.get();
+			assertEquals(bs.length, source.length);
+			int count = 0;
+			for (int i = 0; i != bs.length; ++i) {
+				if (bs[i] != source[i]) {
+					count++;
+					assertEquals(target[i], bs[i]);
+				}
+			}
+			assertEquals(n, count);
+		}
+	}
+
+	private static Content.Blob[] mutate(byte[] target, Content.Blob[] blobs) {
+		ArrayList<Content.Blob> tmp = new ArrayList<>();
+		for(int i=0;i!=blobs.length;++i) {
+			Content.Blob ith = blobs[i];
+			for(int j=0;j!=target.length;++j) {
+				byte b = ith.read(j);
+				if(b != target[j]) {
+					tmp.add(ith.write(j, target[j]));
+				}
+			}
+		}
+		return tmp.toArray(new Content.Blob[tmp.size()]);
 	}
 
 	// ===================================================================
