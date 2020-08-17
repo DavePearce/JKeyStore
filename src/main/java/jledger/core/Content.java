@@ -12,6 +12,12 @@ public class Content {
 		// what goes here?
 	}
 
+	public interface Path {
+		public int index();
+
+		public Path child();
+	}
+	
 	/**
 	 * Provides a generic mechanism for describing the data layout of an object
 	 * interned on a ledger.
@@ -19,22 +25,10 @@ public class Content {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Layout<T extends Proxy> {
-		/**
-		 * Decode a given binary blob into a proxy object according to this layout.
-		 *
-		 * @param blob The raw data making up the representation of this object.
-		 * @return
-		 */
-		public T decode(Blob blob);
+	public interface Layout {
+		public void write_u1(boolean value, Path path);
 
-		/**
-		 * Encode a given proxy object into a binary blob according to this layout.
-		 *
-		 * @param object
-		 * @return
-		 */
-		public Blob encode(T object);
+		public void write_u32(int value, Path path);
 	}
 
 	/**
