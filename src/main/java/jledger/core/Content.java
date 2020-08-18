@@ -12,12 +12,44 @@ public class Content {
 		// what goes here?
 	}
 
-	public interface Path {
+	/**
+	 * Identifies a specific position within a given layout. The following
+	 * illustrates:
+	 *
+	 * <pre>
+	 *   |00|01|02|03|04|05|06|07|08|
+	 *   +--------+--------+--------+
+	 * 0 |        |        |        |
+	 *   +-----+--+-----+--+-----+--+
+	 * 1 |     |  |     |  |     |  |
+	 *   +-----+--+-----+--+-----+--+
+	 * 2 |00 ff|01|00 00|00|af 00|00|
+	 * </pre>
+	 *
+	 * This layout consists of a repeating sequence of two fields. The first field
+	 * occupies two bytes, whilst the second occupies one. The position held by
+	 * value <code>01</code> is <code>(0,1)</code>, whilst that for the value
+	 * <code>af 00</code> is <code>(2,0)</code>.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Position {
+		/**
+		 * The index point at this level of recursion.
+		 *
+		 * @return
+		 */
 		public int index();
 
-		public Path child();
+		/**
+		 * Return the subposition contained within this position.
+		 *
+		 * @return
+		 */
+		public Position child();
 	}
-	
+
 	/**
 	 * Provides a generic mechanism for describing the data layout of an object
 	 * interned on a ledger.
@@ -26,9 +58,165 @@ public class Content {
 	 *
 	 */
 	public interface Layout {
-		public void write_u1(boolean value, Path path);
 
-		public void write_u32(int value, Path path);
+		/**
+		 * Return the size (in bytes) of this layouts instantiation in a given blob.
+		 *
+		 * @param blob   The blob in which this layout is instantiated.
+		 * @param offset The starting offset where this layout is instantiated.
+		 * @return
+		 */
+		public int size(Content.Blob blob, int offset);
+
+		/**
+		 * Read a boolean value from a given position within an instantiation of this
+		 * layout in a blob.
+		 *
+		 * @param position The position to be read.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public boolean read_bit(Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Read a signed 8-bit integer value from a given position within an
+		 * instantiation of this layout in a blob.
+		 *
+		 * @param position The position to be read.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public byte read_i8(Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Read a signed 16-bit integer value from a given position within an
+		 * instantiation of this layout in a blob.
+		 *
+		 * @param position The position to be read.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public short read_i16(Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Read a signed 32-bit integer value from a given position within an
+		 * instantiation of this layout in a blob.
+		 *
+		 * @param position The position to be read.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public int read_i32(Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Read a signed 64-bit integer value from a given position within an
+		 * instantiation of this layout in a blob.
+		 *
+		 * @param position The position to be read.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public long read_i64(Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Read a sequence of zero or more bytes from a given position within an
+		 * instantiation of this layout in a blob.
+		 *
+		 * @param position The position to be read.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public byte[] read_bytes(Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Write a boolean value at a given position within an instantiation of this
+		 * layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The boolean value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob write_bit(boolean value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Write a signed 8-bit integer value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob write_i8(byte value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Write a signed 16-bit integer value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob write_i16(short value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Write a signed 32-bit integer value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob write_i32(int value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Write a signed 64-bit integer value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob write_i64(long value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Write sequence of zero or more bytes value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob write_bytes(byte[] bytes, Position position, Content.Blob blob, int offset);
 	}
 
 	/**
