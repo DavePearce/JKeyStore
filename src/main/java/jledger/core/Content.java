@@ -9,7 +9,19 @@ public class Content {
 	 *
 	 */
 	public interface Proxy {
-		// what goes here?
+		/**
+		 * Get the underlying blob containing this proxy object.
+		 *
+		 * @return
+		 */
+		public Content.Blob getBlob();
+
+		/**
+		 * Get the underlying layout describing this proxy object.
+		 *
+		 * @return
+		 */
+		public Content.Layout getLayout();
 	}
 
 	/**

@@ -1,16 +1,18 @@
 package jledger.util;
 
+import java.util.function.Function;
+
 import jledger.core.Content;
 import jledger.core.Ledger;
 
-public class DumbLedger<T extends Content.Proxy> implements Ledger<T> {
-	private final Content.Layout<T> layout;
+public class NonSequentialLedger<T extends Content.Proxy> implements Ledger<T> {
+	private final Function<Content.Blob, T> factory;
 
 	private int length;
 	private Content.Blob[] ledger;
 
-	public DumbLedger(Content.Layout<T> layout, int capacity) {
-		this.layout = layout;
+	public NonSequentialLedger(Function<Content.Blob, T> factory, int capacity) {
+		this.factory = factory;
 		this.ledger = new Content.Blob[capacity];
 	}
 
@@ -24,7 +26,7 @@ public class DumbLedger<T extends Content.Proxy> implements Ledger<T> {
 		// Get the blob at the given timestamp
 		Content.Blob blob = ledger[timestamp];
 		// Decode it
-		return layout.decode(blob);
+		return factory.apply(blob);
 	}
 
 	@Override
@@ -33,7 +35,7 @@ public class DumbLedger<T extends Content.Proxy> implements Ledger<T> {
 		// Also need to check sequence is correct as well? Well, if they don't interfere
 		// then can fast forward.
 		// Write new blob into ledger
-		ledger[length++] = layout.encode(object);
+		ledger[length++] = object.getBlob();
 		// Done
 	}
 }
