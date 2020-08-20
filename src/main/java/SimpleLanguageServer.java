@@ -1,56 +1,80 @@
 import java.util.HashMap;
 
-import jledger.util.ByteArrayLedger;
+import jledger.core.Ledger;
+import jledger.core.Content;
+import jledger.core.Content.Blob;
+import jledger.core.Content.Layout;
+import jledger.util.ByteBlob;
+import static jledger.util.Layouts.*;
+import jledger.util.NonSequentialLedger;
 import jledger.util.Pair;
 
 public class SimpleLanguageServer implements LanguageServer {
-	private HashMap<String,Workspace> workspaces = new HashMap<>();
+	private HashMap<String,Environment> environments = new HashMap<>();
 
 	@Override
 	public Workspace open(String name) {
-		if(workspaces.containsKey(name)) {
-			return workspaces.get(name);
+		if(environments.containsKey(name)) {
+			return environments.get(name).get();
 		} else {
-			Workspace workspace = new Workspace();
-			workspaces.put(name, workspace);
-			return workspace;
+			Environment workspace = new Environment();
+			environments.put(name, workspace);
+			return workspace.get();
 		}
 	}
 
-	private class Workspace implements LanguageServer.Workspace {
-		private final ByteArrayLedger ledger;
-		private final ByteArrayLedger.Key root;
+	private class Environment {
+		private final Ledger<Workspace> ledger;
+
+		public Environment() {
+			this.ledger = new NonSequentialLedger<>(blob -> this.construct(blob),10);
+			this.ledger.put(EMPTY_WORKSPACE);
+		}
+
+		public Workspace get() {
+			return ledger.get(ledger.versions() - 1);
+		}
+
+		private Workspace construct(Content.Blob blob) {
+			return new Workspace(blob);
+		}
+	}
+
+	private static final Workspace EMPTY_WORKSPACE = new Workspace();
+
+	private static class Workspace implements LanguageServer.Workspace, Content.Proxy {
+		private static final Content.Layout LAYOUT = STATIC(INT32);
+
+		private final Content.Blob blob;
 
 		public Workspace() {
-			this.ledger = new ByteArrayLedger(10);
-			// Construct root key
-			root = ledger.add("/");
-			// Write initial set of meta-data
+			// Initialise me!
+			this.blob = LAYOUT.write_i32(0, POSITION(0), ByteBlob.EMPTY, 0);
+		}
+
+		private Workspace(Content.Blob blob) {
+			this.blob = blob;
 		}
 
 		@Override
-		public Project[] list() {
-			// Extract meta-data
-			ByteArrayLedger.Data data = ledger.get(root);
-			// Somehow turn this into a list of projects?
+		public Blob getBlob() {
+			return blob;
+		}
 
+		@Override
+		public Layout getLayout() {
+			return LAYOUT;
+		}
+
+
+		@Override
+		public Project[] list() {
+			throw new IllegalArgumentException("implement me!");
 		}
 
 		@Override
 		public Project create(String name) {
-			ByteArrayLedger.Key key = ledger.lookup(name);
-			// Check whether project of same name already exists
-			if(key != null) {
-				// Yes, it already exists!
-				throw new IllegalArgumentException("Project " + name + " already exists!");
-			} else {
-				// Create key for project
-				key = ledger.add(name);
-				// Write initial set of meta-deta
-				ledger.add(new Pair<>(key,value));
-				//
-				return new Project(this,key);
-			}
+			throw new IllegalArgumentException("implement me!");
 		}
 
 		@Override
@@ -63,29 +87,6 @@ public class SimpleLanguageServer implements LanguageServer {
 		public void flush() {
 			// TODO Auto-generated method stub
 
-		}
-
-	}
-
-	private class Project implements LanguageServer.Project {
-		private final Workspace workspace;
-		private final ByteArrayLedger.Key key;
-
-		public Project(Workspace workspace, ByteArrayLedger.Key key) {
-			this.workspace = workspace;
-			this.key = key;
-		}
-
-		@Override
-		public File[] list() {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public File create(String name) {
-			// TODO Auto-generated method stub
-			return null;
 		}
 
 	}

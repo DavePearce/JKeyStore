@@ -1,4 +1,4 @@
-import jledger.util.ByteArrayDiff;
+import jledger.core.Content;
 
 public interface LanguageServer {
 	/**
@@ -76,7 +76,7 @@ public interface LanguageServer {
 		 *
 		 * @param diff
 		 */
-		public void write(ByteArrayDiff diff);
+		public void write(Content.Diff diff);
 		/**
 		 * Read the entire file into a byte array.
 		 *

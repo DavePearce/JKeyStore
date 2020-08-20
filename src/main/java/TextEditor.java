@@ -30,8 +30,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
 
-import jledger.util.ByteArrayDiff;
-
 public class TextEditor extends JFrame implements TreeSelectionListener, ActionListener, MouseListener {
 	private final LanguageServer.Workspace root;
 	/**
@@ -300,93 +298,8 @@ public class TextEditor extends JFrame implements TreeSelectionListener, ActionL
 
 
 	public static void main(String[] args) {
-		new TextEditor(new Workspace());
-	}
-
-	private static class Workspace implements LanguageServer.Workspace {
-		private Project project = new Project();
-
-		@Override
-		public LanguageServer.Project[] list() {
-			return new LanguageServer.Project[] {project};
-		}
-
-		@Override
-		public LanguageServer.Project create(String name) {
-			throw new IllegalArgumentException();
-		}
-
-		@Override
-		public void close() {
-			throw new IllegalArgumentException();
-		}
-
-		@Override
-		public void flush() {
-			throw new IllegalArgumentException();
-		}
-
-	}
-
-	private static class Project implements LanguageServer.Project {
-		private File[] files;
-
-		public Project() {
-			String contents = "function f(int x) -> int r:";
-			this.files = new File[] { new File(contents.getBytes()) };
-		}
-
-		@Override
-		public File[] list() {
-			return files;
-		}
-
-		@Override
-		public File create(String name) {
-			throw new IllegalArgumentException();
-		}
-
-	}
-
-	private static class File implements LanguageServer.File {
-		private byte[] data;
-
-		public File(byte[] data) {
-			this.data = Arrays.copyOf(data, data.length);
-		}
-
-		@Override
-		public void delete() {
-			throw new IllegalArgumentException();
-		}
-
-		@Override
-		public void write(byte[] contents) {
-			System.out.println("WRITING CONTENTS");
-			this.data = contents;
-		}
-
-		@Override
-		public void write(ByteArrayDiff diff) {
-			throw new IllegalArgumentException();
-		}
-
-		@Override
-		public byte[] read() {
-			return data;
-		}
-
-		@Override
-		public byte[] read(int offset, int length) {
-			throw new IllegalArgumentException();
-		}
-
-		@Override
-		public void read(int srcOffset, byte[] dest, int dstOffset, int length) {
-			// TODO Auto-generated method stub
-
-		}
-
+		LanguageServer server = new SimpleLanguageServer();
+		new TextEditor(server.open("default"));
 	}
 
 }
