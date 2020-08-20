@@ -26,9 +26,15 @@ import jledger.core.Content.Blob;
  *
  */
 public class ByteBlob implements Content.Blob {
-	protected byte[] bytes;
+	/**
+	 * An empty blob which is useful in all situations where there is no initial
+	 * data.
+	 */
+	public static final ByteBlob EMPTY = new ByteBlob();
 
-	public ByteBlob(byte[] data) {
+	protected final byte[] bytes;
+
+	public ByteBlob(byte... data) {
 		this.bytes = data;
 	}
 
@@ -135,11 +141,20 @@ public class ByteBlob implements Content.Blob {
 
 		@Override
 		public int size() {
+			// Determine parent's initial size
+			int size = parent.size();
+			//
 			int diff = 0;
+			// Examine replacements
 			for (int i = 0; i != replacements.length; ++i) {
-				diff += replacements[i].diff();
+				Replacement ith = replacements[i];
+				// Account for delta changes
+				diff += ith.diff();
+				// Account for elastiticity of parent
+				size = Math.max(size,ith.offset + ith.length);
 			}
-			return parent.size() + diff;
+			//
+			return size + diff;
 		}
 
 		@Override
@@ -203,8 +218,10 @@ public class ByteBlob implements Content.Blob {
 				final byte[] ithbytes = ith.bytes;
 				// Calculate gap
 				int gap = ith.offset - opos;
-				// Copy section up to delta start
-				System.arraycopy(bytes, opos, result, rpos, gap);
+				// Determine remainder
+				int remainder = bytes.length - opos;
+				// Copy section up to delta start (if any)
+				System.arraycopy(bytes, opos, result, rpos, Math.min(remainder, gap));
 				// move pointer along
 				rpos = rpos + gap;
 				// Copy delta replacement itself
@@ -214,7 +231,11 @@ public class ByteBlob implements Content.Blob {
 				rpos = rpos + ithbytes.length;
 			}
 			// Finally, copy over any remaining bytes from original sequence.
-			System.arraycopy(bytes, opos, result, rpos, bytes.length - opos);
+			int remainder = bytes.length - opos;
+			// Copy remaining bytes (if any)
+			if(remainder > 0) {
+				System.arraycopy(bytes, opos, result, rpos, remainder);
+			}
 			//
 			return result;
 		}
@@ -554,14 +575,8 @@ public class ByteBlob implements Content.Blob {
 	}
 
 	public static void main(String[] args) {
-		byte[] bs = "Hello World".getBytes();
-		Content.Blob blob = new ByteBlob(bs);
-		blob = blob.replace(0, 0, "______".getBytes());
-		//
-		for(int i=0;i!=blob.size();++i) {
-			char c = (char) blob.read(i);
-			System.out.print(c);
-		}
-		System.out.println();
+		Content.Blob blob = ByteBlob.EMPTY;
+		blob = blob.write(10, (byte) 0b0001).write(20, (byte) 11);
+		System.out.println(Arrays.toString(blob.get()));
 	}
 }

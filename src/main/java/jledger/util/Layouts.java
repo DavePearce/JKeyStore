@@ -552,9 +552,9 @@ public class Layouts {
 	}
 
 	public static void main(String[] args) {
-		Content.Blob blob = new ByteBlob(new byte[5]);
+		Content.Blob blob = ByteBlob.EMPTY;
 		Content.Layout layout = STATIC(INT8,INT32);
-		blob = layout.write_i32(-2, POSITION(1), blob, 0);
+		blob = layout.write_i32(2, POSITION(1), blob, 0);
 		blob = layout.write_i8((byte) 127, POSITION(0), blob, 0);
 		System.out.println("BLOB: " + Arrays.toString(blob.get()));
 		System.out.println("GOT: " + layout.read_i8(POSITION(0), blob, 0));

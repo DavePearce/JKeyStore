@@ -232,8 +232,10 @@ public class Content {
 	}
 
 	/**
-	 * Represents an immutable data blob which can be written into a ledger. Values
-	 * are immutable data structures which, when written, construct new values.
+	 * Represents an immutable binary blob of data which can be written into a
+	 * ledger. Blobs are immutable data structures which, when written, construct
+	 * new blobs. Blobs are also elastic in that they automatically resize to
+	 * accommodate writing beyond their current bounds.
 	 *
 	 * @author David J. Pearce
 	 *
@@ -263,11 +265,12 @@ public class Content {
 		public byte read(int index);
 
 		/**
-		 * Write a given byte to a given position within this value. The index must be
-		 * within bounds.
+		 * Write a given byte to a given position within this value. The index does not
+		 * need to be in bounds since blobs are elastic. Thus, writing beyond bounds
+		 * increases the size of the blob accordingly.
 		 *
 		 * @param index Position to overwrite
-		 * @param b data byte to written
+		 * @param b     data byte to written
 		 * @return
 		 */
 		public Diff write(int index, byte b);
@@ -275,7 +278,8 @@ public class Content {
 		/**
 		 * Replace a given section of this value with a new sequence of bytes. The new
 		 * byte sequence does not need to be the same length as the section replaced.
-		 * The section bing replaced must be entirely within bounds.
+		 * The index does not need to be in bounds since blobs are elastic. Thus,
+		 * writing beyond bounds increases the size of the blob accordingly.
 		 *
 		 * @param index  starting offset of section being replaced
 		 * @param length size of section being replaced
