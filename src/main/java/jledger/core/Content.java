@@ -229,6 +229,39 @@ public class Content {
 		 * @return
 		 */
 		public Content.Blob write_bytes(byte[] bytes, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Initialise this layout at a given position within a blob. This will
+		 * initialise appropriate default values for fields. For example, an integer may
+		 * default to zero, whilst an array may default to being empty, etc.
+		 *
+		 * @return
+		 */
+		public Content.Blob initialise(Content.Blob blob, int offset);
+	}
+
+	/**
+	 * A specialised interface which can be used to construct an object proxy for a
+	 * given position within a blob.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <T>
+	 */
+	public interface Constructor<T extends Proxy>{
+		public T construct(Content.Blob blob, int offset);
+	}
+
+	/**
+	 * A specialised layout which allows proxy objects to be constructed directly
+	 * from within.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <T>
+	 */
+	public interface ConstructorLayout<T extends Proxy> extends Layout, Constructor<T> {
+
 	}
 
 	/**

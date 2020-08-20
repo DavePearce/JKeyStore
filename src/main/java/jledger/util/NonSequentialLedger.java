@@ -1,18 +1,16 @@
 package jledger.util;
 
-import java.util.function.Function;
-
 import jledger.core.Content;
 import jledger.core.Ledger;
+import jledger.core.Content.ConstructorLayout;
 
 public class NonSequentialLedger<T extends Content.Proxy> implements Ledger<T> {
-	private final Function<Content.Blob, T> factory;
-
+	private final ConstructorLayout<T> layout;
 	private int length;
 	private Content.Blob[] ledger;
 
-	public NonSequentialLedger(Function<Content.Blob, T> factory, int capacity) {
-		this.factory = factory;
+	public NonSequentialLedger(ConstructorLayout<T> layout, int capacity) {
+		this.layout = layout;
 		this.ledger = new Content.Blob[capacity];
 	}
 
@@ -26,7 +24,7 @@ public class NonSequentialLedger<T extends Content.Proxy> implements Ledger<T> {
 		// Get the blob at the given timestamp
 		Content.Blob blob = ledger[timestamp];
 		// Decode it
-		return factory.apply(blob);
+		return layout.construct(blob, 0);
 	}
 
 	@Override

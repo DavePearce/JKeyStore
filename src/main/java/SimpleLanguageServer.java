@@ -5,7 +5,9 @@ import jledger.core.Content;
 import jledger.core.Content.Blob;
 import jledger.core.Content.Layout;
 import jledger.util.ByteBlob;
-import static jledger.util.Layouts.*;
+import jledger.util.ContentLayouts;
+
+import static jledger.util.ContentLayouts.*;
 import jledger.util.NonSequentialLedger;
 import jledger.util.Pair;
 
@@ -27,32 +29,32 @@ public class SimpleLanguageServer implements LanguageServer {
 		private final Ledger<Workspace> ledger;
 
 		public Environment() {
-			this.ledger = new NonSequentialLedger<>(blob -> this.construct(blob),10);
+			this.ledger = new NonSequentialLedger<>(Workspace.LAYOUT,10);
 			this.ledger.put(EMPTY_WORKSPACE);
 		}
 
 		public Workspace get() {
 			return ledger.get(ledger.versions() - 1);
 		}
-
-		private Workspace construct(Content.Blob blob) {
-			return new Workspace(blob);
-		}
 	}
 
 	private static final Workspace EMPTY_WORKSPACE = new Workspace();
 
 	private static class Workspace implements LanguageServer.Workspace, Content.Proxy {
-		private static final Content.Layout LAYOUT = STATIC(INT32);
+		private static final Content.ConstructorLayout<Workspace> LAYOUT = ContentLayouts.CONSTRUCTOR(Workspace::new,
+				STATIC_ARRAY(2, Project.LAYOUT));
 
 		private final Content.Blob blob;
 
 		public Workspace() {
 			// Initialise me!
-			this.blob = LAYOUT.write_i32(0, POSITION(0), ByteBlob.EMPTY, 0);
+			this.blob = LAYOUT.initialise(ByteBlob.EMPTY, 0);
 		}
 
-		private Workspace(Content.Blob blob) {
+		private Workspace(Content.Blob blob, int offset) {
+			if (offset != 0) {
+				throw new IllegalArgumentException();
+			}
 			this.blob = blob;
 		}
 
@@ -66,10 +68,11 @@ public class SimpleLanguageServer implements LanguageServer {
 			return LAYOUT;
 		}
 
-
 		@Override
 		public Project[] list() {
-			throw new IllegalArgumentException("implement me!");
+			Project[] items = new Project[2];
+			//items[0] = ??;
+			return items;
 		}
 
 		@Override
@@ -89,5 +92,38 @@ public class SimpleLanguageServer implements LanguageServer {
 
 		}
 
+	}
+
+	private static class Project implements LanguageServer.Project, Content.Proxy {
+		private static final Content.ConstructorLayout<Project> LAYOUT = ContentLayouts.CONSTRUCTOR(Project::new,
+				STATIC(INT32));
+
+		public Project(Content.Blob blob, int offset) {
+
+		}
+
+		@Override
+		public File[] list() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public File create(String name) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public Blob getBlob() {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+		@Override
+		public Layout getLayout() {
+			// TODO Auto-generated method stub
+			return null;
+		}
 	}
 }

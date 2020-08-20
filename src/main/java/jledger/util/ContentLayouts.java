@@ -1,12 +1,13 @@
 package jledger.util;
 
 import java.util.Arrays;
+import java.util.function.Function;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
 import jledger.core.Content.Position;
 
-public class Layouts {
+public class ContentLayouts {
 
 	// ========================================================================
 	// Positions
@@ -222,6 +223,11 @@ public class Layouts {
 	public static final Content.Layout INT8 = new AbstractTerminalLayout() {
 
 		@Override
+		public Content.Blob initialise(Content.Blob blob, int offset) {
+			return write_i8((byte) 0, blob, offset);
+		}
+
+		@Override
 		public int size(Blob blob, int offset) {
 			return 1;
 		}
@@ -243,6 +249,11 @@ public class Layouts {
 	 * @return
 	 */
 	public static final Content.Layout INT16 = new AbstractTerminalLayout() {
+
+		@Override
+		public Content.Blob initialise(Content.Blob blob, int offset) {
+			return write_i16((short) 0, blob, offset);
+		}
 
 		@Override
 		public int size(Blob blob, int offset) {
@@ -274,6 +285,11 @@ public class Layouts {
 	 * @return
 	 */
 	public static final Content.Layout INT32 = new AbstractTerminalLayout() {
+
+		@Override
+		public Content.Blob initialise(Content.Blob blob, int offset) {
+			return write_i32(0, blob, offset);
+		}
 
 		@Override
 		public int size(Blob blob, int offset) {
@@ -316,6 +332,19 @@ public class Layouts {
 	 *
 	 */
 	private static abstract class AbstractNonTerminalLayout implements Content.Layout {
+
+		@Override
+		public Content.Blob initialise(Content.Blob blob, int offset) {
+			for(int i=0;i!=numberOfChildren();++i) {
+				// Extract the given child from the position
+				Content.Layout child = getChild(i,blob,offset);
+				// Determine the offset of the child within enclosing blob
+				int childOffset = getChildOffset(i, blob, offset);
+				// Initialise the child
+				blob = child.initialise(blob, childOffset);
+			}
+			return blob;
+		}
 
 		@Override
 		public boolean read_bit(Position pos, Content.Blob blob, int offset) {
@@ -438,6 +467,13 @@ public class Layouts {
 		}
 
 		/**
+		 * Generic method for determining the number of children.
+		 *
+		 * @return
+		 */
+		protected abstract int numberOfChildren();
+
+		/**
 		 * Generic method for extracting the layout of a given child.
 		 *
 		 * @param child  The child of this layout
@@ -487,6 +523,11 @@ public class Layouts {
 		return new AbstractNonTerminalLayout() {
 
 			@Override
+			public int numberOfChildren() {
+				return children.length;
+			}
+
+			@Override
 			public int size(Blob blob, int offset) {
 				int start = offset;
 				for(int i=0;i!=children.length;++i) {
@@ -524,6 +565,11 @@ public class Layouts {
 		return new AbstractNonTerminalLayout() {
 
 			@Override
+			public int numberOfChildren() {
+				return n;
+			}
+
+			@Override
 			public int size(Blob blob, int offset) {
 				int start = offset;
 				for (int i = 0; i != n; ++i) {
@@ -547,6 +593,91 @@ public class Layouts {
 					offset += child.size(blob, offset);
 				}
 				return offset;
+			}
+		};
+	}
+
+	// ========================================================================
+	// Constructors
+	// ========================================================================
+
+	static public <T extends Content.Proxy> Content.ConstructorLayout<T> CONSTRUCTOR(Content.Constructor<T> constructor,
+			Content.Layout layout) {
+		return new Content.ConstructorLayout<T>() {
+
+			@Override
+			public int size(Blob blob, int offset) {
+				return layout.size(blob, offset);
+			}
+
+			@Override
+			public boolean read_bit(Position position, Blob blob, int offset) {
+				return layout.read_bit(position, blob, offset);
+			}
+
+			@Override
+			public byte read_i8(Position position, Blob blob, int offset) {
+				return layout.read_i8(position, blob, offset);
+			}
+
+			@Override
+			public short read_i16(Position position, Blob blob, int offset) {
+				return layout.read_i16(position, blob, offset);
+			}
+
+			@Override
+			public int read_i32(Position position, Blob blob, int offset) {
+				return layout.read_i32(position, blob, offset);
+			}
+
+			@Override
+			public long read_i64(Position position, Blob blob, int offset) {
+				return layout.read_i64(position, blob, offset);
+			}
+
+			@Override
+			public byte[] read_bytes(Position position, Blob blob, int offset) {
+				return layout.read_bytes(position, blob, offset);
+			}
+
+			@Override
+			public Blob write_bit(boolean value, Position position, Blob blob, int offset) {
+				return layout.write_bit(value, position, blob, offset);
+			}
+
+			@Override
+			public Blob write_i8(byte value, Position position, Blob blob, int offset) {
+				return layout.write_i8(value, position, blob, offset);
+			}
+
+			@Override
+			public Blob write_i16(short value, Position position, Blob blob, int offset) {
+				return layout.write_i16(value, position, blob, offset);
+			}
+
+			@Override
+			public Blob write_i32(int value, Position position, Blob blob, int offset) {
+				return layout.write_i32(value, position, blob, offset);
+			}
+
+			@Override
+			public Blob write_i64(long value, Position position, Blob blob, int offset) {
+				return layout.write_i64(value, position, blob, offset);
+			}
+
+			@Override
+			public Blob write_bytes(byte[] bytes, Position position, Blob blob, int offset) {
+				return layout.write_bytes(bytes, position, blob, offset);
+			}
+
+			@Override
+			public Blob initialise(Blob blob, int offset) {
+				return layout.initialise(blob, offset);
+			}
+
+			@Override
+			public T construct(Blob blob, int offset) {
+				return constructor.construct(blob, offset);
 			}
 		};
 	}
