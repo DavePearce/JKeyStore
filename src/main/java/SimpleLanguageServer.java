@@ -10,6 +10,7 @@ import jledger.util.AbstractLayouts;
 import static jledger.util.AbstractLayouts.*;
 import static jledger.util.PrimitiveLayouts.*;
 import static jledger.util.ArrayLayouts.*;
+import static jledger.util.RecordLayouts.*;
 import jledger.util.NonSequentialLedger;
 import jledger.util.Pair;
 import jledger.util.RecordLayouts;
@@ -46,7 +47,7 @@ public class SimpleLanguageServer implements LanguageServer {
 	private static class Workspace implements LanguageServer.Workspace, Content.Proxy {
 		private static final Content.ConstructorLayout<Project[]> PROJECTS = DYNAMIC_ARRAY(Project.LAYOUT,
 				new Project[0]);
-		private static final Content.ConstructorLayout<Workspace> LAYOUT = AbstractLayouts.CONSTRUCTOR(Workspace::new,
+		private static final Content.ConstructorLayout<Workspace> LAYOUT = RECORD(Workspace::new,
 				PROJECTS);
 
 		private final Content.Blob blob;
@@ -66,6 +67,10 @@ public class SimpleLanguageServer implements LanguageServer {
 			this.offset = offset;
 		}
 
+		public int getOffset() {
+			return 0;
+		}
+		
 		@Override
 		public Blob getBlob() {
 			return blob;
@@ -76,9 +81,13 @@ public class SimpleLanguageServer implements LanguageServer {
 			return LAYOUT;
 		}
 
+		public Workspace add(Project project) {
+			return PROJECTS.append(project);
+		}
+		
 		@Override
 		public Project[] list() {
-			return PROJECTS.construct(blob, offset);
+			return PROJECTS.read(blob, offset);
 		}
 
 		@Override
@@ -101,13 +110,31 @@ public class SimpleLanguageServer implements LanguageServer {
 	}
 
 	private static class Project implements LanguageServer.Project, Content.Proxy {
-		private static final Content.ConstructorLayout<Project> LAYOUT = AbstractLayouts.CONSTRUCTOR(Project::new,
+		private static final Content.ConstructorLayout<Project> LAYOUT = RECORD(Project::new,
 				RecordLayouts.RECORD(INT32));
-
+		
+		private final int offset;
+		private final Content.Blob blob;
+		
 		public Project(Content.Blob blob, int offset) {
-
+			this.offset = offset;
+			this.blob = blob;
 		}
 
+		public int getOffset() {
+			return offset;
+		}
+
+		@Override
+		public Blob getBlob() {
+			return blob;
+		}
+
+		@Override
+		public Layout getLayout() {
+			return LAYOUT;
+		}
+		
 		@Override
 		public File[] list() {
 			return new File[0];
@@ -119,16 +146,5 @@ public class SimpleLanguageServer implements LanguageServer {
 			return null;
 		}
 
-		@Override
-		public Blob getBlob() {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public Layout getLayout() {
-			// TODO Auto-generated method stub
-			return null;
-		}
 	}
 }

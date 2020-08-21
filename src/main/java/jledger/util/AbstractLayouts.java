@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
+import jledger.core.Content.Layout;
 import jledger.core.Content.Position;
 
 public class AbstractLayouts {
@@ -166,6 +167,11 @@ public class AbstractLayouts {
 			}
 		}
 
+		@Override
+		public Content.Blob write(Content.Proxy proxy, Position position, Content.Blob blob, int offset) {
+			throw new UnsupportedOperationException();
+		}
+		
 		protected boolean read_bit(Content.Blob blob, int offset) {
 			throw new UnsupportedOperationException();
 		}
@@ -213,6 +219,7 @@ public class AbstractLayouts {
 		protected Content.Blob write_bytes(byte[] value,Content.Blob blob, int offset) {
 			throw new UnsupportedOperationException();
 		}
+		
 	}
 
 	public static abstract class StaticTerminal extends Terminal
@@ -366,6 +373,31 @@ public class AbstractLayouts {
 			return child.write_bytes(value, pos.child(), blob, childOffset);
 		}
 
+		@Override
+		public Content.Blob write(Content.Proxy proxy, Position pos, Content.Blob blob, int offset) {
+			// Determine next index within position
+			if(pos != null) {
+				// Extract the given child from the position
+				Content.Layout child = getChild(pos.index(), blob, offset);
+				// Determine the offset of the child within enclosing blob
+				int childOffset = getChildOffset(pos.index(), blob, offset);
+				// Write the proxy down
+				return child.write(proxy, pos.child(), blob, childOffset);
+			} else if(proxy.getLayout() != this) {
+				throw new IllegalArgumentException("incompatible layout");
+			} else {				
+				// Determine size of the child
+				int mySize = size(blob, offset);
+				// Extract underlying blob
+				Content.Blob proxyBlob = proxy.getBlob();
+				// Readout the bytes representing the object in question			
+				byte[] bytes = proxyBlob.read(offset,mySize);
+				// Destruct the object and replace the existing one
+				return blob.replace(offset, mySize, bytes);
+			} 
+		}
+		
+		
 		/**
 		 * Generic method for determining the number of children.
 		 * 
@@ -407,98 +439,59 @@ public class AbstractLayouts {
 
 	}
 
-	
-	// ========================================================================
-	// Constructors
-	// ========================================================================
+	private static class Test implements Content.Proxy {
+		private static final Content.ConstructorLayout<Test> LAYOUT = RecordLayouts.RECORD(Test::new,
+				PrimitiveLayouts.INT32, PrimitiveLayouts.INT32);
+		private final int offset;
+		private final Content.Blob blob;
+		
+		public Test(int x, int y) {
+			Content.Blob b = new ByteBlob();
+			this.offset = 0;
+			b = LAYOUT.initialise(b, 0);
+			b = LAYOUT.write_i32(x,POSITION(0),b,0);
+			b = LAYOUT.write_i32(y,POSITION(1),b,0);
+			this.blob = b;
+		}
+		
+		public Test(Content.Blob blob, int offset) {
+			this.offset = offset;
+			this.blob = blob;
+		}
 
-	static public <T extends Content.Proxy> Content.ConstructorLayout<T> CONSTRUCTOR(Content.Constructor<T> constructor,
-			Content.Layout layout) {
-		return new Content.ConstructorLayout<T>() {
+		public int getX() {
+			return LAYOUT.read_i32(POSITION(0), blob, offset);
+		}
+		
+		public int getY() {
+			return LAYOUT.read_i32(POSITION(1), blob, offset);
+		}
+		
+		@Override
+		public int getOffset() {
+			return offset;
+		}
 
-			@Override
-			public int size(Blob blob, int offset) {
-				return layout.size(blob, offset);
-			}
+		@Override
+		public Blob getBlob() {
+			return blob;
+		}
 
-			@Override
-			public boolean read_bit(Position position, Blob blob, int offset) {
-				return layout.read_bit(position, blob, offset);
-			}
-
-			@Override
-			public byte read_i8(Position position, Blob blob, int offset) {
-				return layout.read_i8(position, blob, offset);
-			}
-
-			@Override
-			public short read_i16(Position position, Blob blob, int offset) {
-				return layout.read_i16(position, blob, offset);
-			}
-
-			@Override
-			public int read_i32(Position position, Blob blob, int offset) {
-				return layout.read_i32(position, blob, offset);
-			}
-
-			@Override
-			public long read_i64(Position position, Blob blob, int offset) {
-				return layout.read_i64(position, blob, offset);
-			}
-
-			@Override
-			public byte[] read_bytes(Position position, Blob blob, int offset) {
-				return layout.read_bytes(position, blob, offset);
-			}
-
-			@Override
-			public Blob write_bit(boolean value, Position position, Blob blob, int offset) {
-				return layout.write_bit(value, position, blob, offset);
-			}
-
-			@Override
-			public Blob write_i8(byte value, Position position, Blob blob, int offset) {
-				return layout.write_i8(value, position, blob, offset);
-			}
-
-			@Override
-			public Blob write_i16(short value, Position position, Blob blob, int offset) {
-				return layout.write_i16(value, position, blob, offset);
-			}
-
-			@Override
-			public Blob write_i32(int value, Position position, Blob blob, int offset) {
-				return layout.write_i32(value, position, blob, offset);
-			}
-
-			@Override
-			public Blob write_i64(long value, Position position, Blob blob, int offset) {
-				return layout.write_i64(value, position, blob, offset);
-			}
-
-			@Override
-			public Blob write_bytes(byte[] bytes, Position position, Blob blob, int offset) {
-				return layout.write_bytes(bytes, position, blob, offset);
-			}
-
-			@Override
-			public Blob initialise(Blob blob, int offset) {
-				return layout.initialise(blob, offset);
-			}
-
-			@Override
-			public T construct(Blob blob, int offset) {
-				return constructor.construct(blob, offset);
-			}
-		};
+		@Override
+		public Layout getLayout() {
+			return LAYOUT;
+		}
+		
+		public String toString() {
+			return "(" + getX() + "," + getY() + ")";
+		}
 	}
-
+	
 	public static void main(String[] args) {
 		Content.Blob blob = ByteBlob.EMPTY;
-		Content.Layout layout = RecordLayouts.RECORD(PrimitiveLayouts.INT8, PrimitiveLayouts.INT32);
-		blob = layout.write_i32(2, POSITION(1), blob, 0);
-		blob = layout.write_i8((byte) 127, POSITION(0), blob, 0);
-		System.out.println("BLOB: " + Arrays.toString(blob.get()));
-		System.out.println("GOT: " + layout.read_i8(POSITION(0), blob, 0));
+		blob = Test.LAYOUT.initialise(blob, 0);
+		System.out.println("GOT: " + Test.LAYOUT.read(blob, 0));
+		blob = Test.LAYOUT.write(new Test(1, 2), null, blob, 0);
+		System.out.println("NOW: " + Test.LAYOUT.read(blob, 0));
 	}
 }

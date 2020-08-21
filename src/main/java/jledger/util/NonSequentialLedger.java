@@ -24,7 +24,7 @@ public class NonSequentialLedger<T extends Content.Proxy> implements Ledger<T> {
 		// Get the blob at the given timestamp
 		Content.Blob blob = ledger[timestamp];
 		// Decode it
-		return layout.construct(blob, 0);
+		return layout.read(blob, 0);
 	}
 
 	@Override

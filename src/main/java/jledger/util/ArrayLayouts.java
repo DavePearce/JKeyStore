@@ -6,7 +6,7 @@ import jledger.core.Content;
 import jledger.core.Content.Blob;
 
 public class ArrayLayouts {
-
+	
 	/**
 	 * Represents a fixed-size repeating sequence of a given layout. Since the array
 	 * has a known fixed size, there is no need to store the array length.
@@ -147,12 +147,12 @@ public class ArrayLayouts {
 		}
 
 		@Override
-		public T[] construct(Blob blob, int offset) {
+		public T[] read(Blob blob, int offset) {
 			T[] arr = Arrays.copyOf(dummy, n);
 			//
 			for (int i = 0; i != arr.length; ++i) {
 				// Construct ith item
-				arr[i] = child.construct(blob, offset);
+				arr[i] = child.read(blob, offset);
 				// Advance offset
 				offset += child.size(blob, offset);
 			}
@@ -209,7 +209,7 @@ public class ArrayLayouts {
 		}
 
 		@Override
-		public T[] construct(Blob blob, int offset) {
+		public T[] read(Blob blob, int offset) {
 			// Determine child size
 			final int size = child.size();
 			// Construct array
@@ -217,7 +217,7 @@ public class ArrayLayouts {
 			//
 			for (int i = 0; i != arr.length; ++i) {
 				// Construct ith item
-				arr[i] = child.construct(blob, offset);
+				arr[i] = child.read(blob, offset);
 				// Advance offset
 				offset += size;
 			}
@@ -286,7 +286,7 @@ public class ArrayLayouts {
 		}
 
 		@Override
-		public T[] construct(Blob blob, int offset) {
+		public T[] read(Blob blob, int offset) {
 			// Determine number of elements
 			int n = numberOfChildren(blob, offset);
 			// Advance past length pointer
@@ -296,7 +296,7 @@ public class ArrayLayouts {
 			//
 			for (int i = 0; i != arr.length; ++i) {
 				// Construct ith item
-				arr[i] = child.construct(blob, offset);
+				arr[i] = child.read(blob, offset);
 				// Advance offset
 				offset += child.size(blob, offset);
 			}

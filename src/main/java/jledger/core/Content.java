@@ -10,6 +10,12 @@ public class Content {
 	 */
 	public interface Proxy {
 		/**
+		 * Get the offset of this proxy object within the blob containing it.
+		 * 
+		 * @return
+		 */
+		public int getOffset();
+		/**
 		 * Get the underlying blob containing this proxy object.
 		 *
 		 * @return
@@ -231,13 +237,24 @@ public class Content {
 		public Content.Blob write_bytes(byte[] bytes, Position position, Content.Blob blob, int offset);
 
 		/**
+		 * Write a proxy object to a given position within this layout.
+		 * 
+		 * @param proxy
+		 * @param position
+		 * @param blob
+		 * @param offset
+		 * @return
+		 */
+		public Content.Blob write(Proxy proxy, Position position, Content.Blob blob, int offset);
+		
+		/**
 		 * Initialise this layout at a given position within a blob. This will
 		 * initialise appropriate default values for fields. For example, an integer may
 		 * default to zero, whilst an array may default to being empty, etc.
 		 *
 		 * @return
 		 */
-		public Content.Blob initialise(Content.Blob blob, int offset);
+		public Content.Blob initialise(Content.Blob blob, int offset);			
 	}
 
 	/**
@@ -266,9 +283,9 @@ public class Content {
 	 * @param <T>
 	 */
 	public interface Constructor<T> {
-		public T construct(Content.Blob blob, int offset);
+		public T read(Content.Blob blob, int offset);
 	}
-
+	
 	/**
 	 * A specialised layout which allows proxy objects to be constructed directly
 	 * from within.
@@ -315,10 +332,10 @@ public class Content {
 		 *
 		 * @return
 		 */
-		public byte[] get();
+		public byte[] read();
 
 		/**
-		 * Read a given byte from a given position in the value. The index must be
+		 * Read a given byte from a given position in the blob. The index must be
 		 * within bounds.
 		 *
 		 * @param index
@@ -326,6 +343,28 @@ public class Content {
 		 */
 		public byte read(int index);
 
+		/**
+		 * Read a given sequence of bytes from a given position in the blob. The entire
+		 * region must be within bounds.
+		 * 
+		 * @param index
+		 * @param length
+		 * @return
+		 */
+		public byte[] read(int index, int length);
+		
+		/**
+		 * Read a given sequence of bytes from a given position in the blob into a
+		 * prexisting array. The entire region must be within bounds.
+		 * 
+		 * @param index     The index within this blob to start reading from
+		 * @param length    The number of bytes to read
+		 * @param dest      The destination byte array
+		 * @param destStart starting position within destination
+		 * @return
+		 */
+		public void read(int index, int length, byte[] dest, int destStart);
+		
 		/**
 		 * Write a given byte to a given position within this value. The index does not
 		 * need to be in bounds since blobs are elastic. Thus, writing beyond bounds

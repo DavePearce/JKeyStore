@@ -157,8 +157,8 @@ public class RecordLayouts {
 		}
 
 		@Override
-		public T construct(Blob blob, int offset) {
-			return constructor.construct(blob, offset);
+		public T read(Blob blob, int offset) {
+			return constructor.read(blob, offset);
 		}
 		
 	}
@@ -215,8 +215,8 @@ public class RecordLayouts {
 		}
 
 		@Override
-		public T construct(Blob blob, int offset) {
-			return constructor.construct(blob, offset);
+		public T read(Blob blob, int offset) {
+			return constructor.read(blob, offset);
 		}
 
 	}

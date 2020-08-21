@@ -44,7 +44,7 @@ public class ByteBlob implements Content.Blob {
 	}
 
 	@Override
-	public byte[] get() {
+	public byte[] read() {
 		return bytes;
 	}
 
@@ -52,7 +52,19 @@ public class ByteBlob implements Content.Blob {
 	public byte read(int index) {
 		return bytes[index];
 	}
+	
+	@Override
+	public byte[] read(int index, int length) {
+		byte[] bs = new byte[length];
+		System.arraycopy(bytes, index, bs, 0, length);
+		return bs;
+	}
 
+	@Override
+	public void read(int index, int length, byte[] dest, int destStart) {
+		System.arraycopy(bytes, index, dest, destStart, length);
+	}
+	
 	@Override
 	public Diff write(int index, byte b) {
 		return new Diff(this, new Replacement(index, 1, b));
@@ -178,6 +190,24 @@ public class ByteBlob implements Content.Blob {
 		}
 
 		@Override
+		public byte[] read(int index, int length) {
+			// FIXME: performance could be improved!!
+			byte[] bs = new byte[length];
+			for (int i = 0; i < length; ++i) {
+				bs[i] = read(index + i);
+			}
+			return bs;
+		}
+		
+		@Override
+		public void read(int index, int length, byte[] dest, int destStart) {
+			// FIXME: performance could be improved!!
+			for (int i = 0; i < length; ++i) {
+				dest[destStart + i] = read(index + i);
+			}
+		}
+		
+		@Override
 		public Diff write(int index, byte b) {
 			// NOTE: compress diffs?
 			return new Diff(this, new Replacement(index, 1, b));
@@ -200,12 +230,12 @@ public class ByteBlob implements Content.Blob {
 		}
 
 		@Override
-		public byte[] get() {
+		public byte[] read() {
 			// NOTE: a more efficient way of doing this might be to create an array of the
 			// right size and then write parent data into it?
 			//
 			// Extract the parent bytes
-			final byte[] bytes = parent.get();
+			final byte[] bytes = parent.read();
 			// Determine size of final array
 			final int size = size();
 			// Construct final array
@@ -577,6 +607,6 @@ public class ByteBlob implements Content.Blob {
 	public static void main(String[] args) {
 		Content.Blob blob = ByteBlob.EMPTY;
 		blob = blob.write(10, (byte) 0b0001).write(20, (byte) 11);
-		System.out.println(Arrays.toString(blob.get()));
+		System.out.println(Arrays.toString(blob.read()));
 	}
 }
