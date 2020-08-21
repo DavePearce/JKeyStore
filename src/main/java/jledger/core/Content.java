@@ -241,6 +241,23 @@ public class Content {
 	}
 
 	/**
+	 * Represents a layout whose size is statically known. Knowing that a child
+	 * layout is static can help in some cases. Unfortunately, not all layouts can
+	 * be static by definition.
+	 * 
+	 * @author David J. Pearec
+	 *
+	 */
+	public interface StaticLayout extends Layout {
+		/**
+		 * Return the size of this layout in bytes.
+		 * 
+		 * @return
+		 */
+		public int size();
+	}
+	
+	/**
 	 * A specialised interface which can be used to construct an object proxy for a
 	 * given position within a blob.
 	 *
@@ -264,6 +281,18 @@ public class Content {
 
 	}
 
+	/**
+	 * A specialised layout which allows proxy objects to be constructed directly
+	 * from within.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <T>
+	 */
+	public interface StaticConstructorLayout<T> extends StaticLayout, ConstructorLayout<T> {
+
+	}
+	
 	/**
 	 * Represents an immutable binary blob of data which can be written into a
 	 * ledger. Blobs are immutable data structures which, when written, construct

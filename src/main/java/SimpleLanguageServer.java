@@ -12,6 +12,7 @@ import static jledger.util.PrimitiveLayouts.*;
 import static jledger.util.ArrayLayouts.*;
 import jledger.util.NonSequentialLedger;
 import jledger.util.Pair;
+import jledger.util.RecordLayouts;
 
 public class SimpleLanguageServer implements LanguageServer {
 	private HashMap<String,Environment> environments = new HashMap<>();
@@ -43,14 +44,18 @@ public class SimpleLanguageServer implements LanguageServer {
 	private static final Workspace EMPTY_WORKSPACE = new Workspace();
 
 	private static class Workspace implements LanguageServer.Workspace, Content.Proxy {
+		private static final Content.ConstructorLayout<Project[]> PROJECTS = DYNAMIC_ARRAY(Project.LAYOUT,
+				new Project[0]);
 		private static final Content.ConstructorLayout<Workspace> LAYOUT = AbstractLayouts.CONSTRUCTOR(Workspace::new,
-				STATIC_ARRAY(2, Project.LAYOUT));
+				PROJECTS);
 
 		private final Content.Blob blob;
+		private final int offset;
 
 		public Workspace() {
 			// Initialise me!
 			this.blob = LAYOUT.initialise(ByteBlob.EMPTY, 0);
+			this.offset = 0;
 		}
 
 		private Workspace(Content.Blob blob, int offset) {
@@ -58,6 +63,7 @@ public class SimpleLanguageServer implements LanguageServer {
 				throw new IllegalArgumentException();
 			}
 			this.blob = blob;
+			this.offset = offset;
 		}
 
 		@Override
@@ -72,9 +78,7 @@ public class SimpleLanguageServer implements LanguageServer {
 
 		@Override
 		public Project[] list() {
-			Project[] items = new Project[1];
-			items[0] = Project.LAYOUT.construct(blob, 0);
-			return items;
+			return PROJECTS.construct(blob, offset);
 		}
 
 		@Override
@@ -98,7 +102,7 @@ public class SimpleLanguageServer implements LanguageServer {
 
 	private static class Project implements LanguageServer.Project, Content.Proxy {
 		private static final Content.ConstructorLayout<Project> LAYOUT = AbstractLayouts.CONSTRUCTOR(Project::new,
-				STATIC(INT32));
+				RecordLayouts.RECORD(INT32));
 
 		public Project(Content.Blob blob, int offset) {
 

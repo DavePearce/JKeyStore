@@ -56,7 +56,7 @@ public class AbstractLayouts {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class AbstractTerminalLayout implements Content.Layout {
+	public static abstract class Terminal implements Content.Layout {
 
 		@Override
 		public boolean read_bit(Position pos, Content.Blob blob, int offset) {
@@ -215,6 +215,11 @@ public class AbstractLayouts {
 		}
 	}
 
+	public static abstract class StaticTerminal extends Terminal
+			implements Content.StaticLayout {
+
+	}
+	
 	// ========================================================================
 	// Non-Terminal Layouts
 	// ========================================================================
@@ -226,11 +231,11 @@ public class AbstractLayouts {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class AbstractNonTerminalLayout implements Content.Layout {
+	public static abstract class NonTerminal implements Content.Layout {
 
 		@Override
 		public Content.Blob initialise(Content.Blob blob, int offset) {
-			for(int i=0;i!=numberOfChildren();++i) {
+			for(int i=0;i!=numberOfChildren(blob,offset);++i) {
 				// Extract the given child from the position
 				Content.Layout child = getChild(i,blob,offset);
 				// Determine the offset of the child within enclosing blob
@@ -363,10 +368,14 @@ public class AbstractLayouts {
 
 		/**
 		 * Generic method for determining the number of children.
+		 * 
+		 * @param blob   The blob containing the instantiation of this layout
+		 * @param offset The offset within the enclosing blob of the instantiation of
+		 *               this layout
 		 *
 		 * @return
 		 */
-		protected abstract int numberOfChildren();
+		protected abstract int numberOfChildren(Content.Blob blob, int offset);
 
 		/**
 		 * Generic method for extracting the layout of a given child.
@@ -393,60 +402,12 @@ public class AbstractLayouts {
 	}
 
 
-	/**
-	 * Represents a static layout which consists of a fixed number of children. The
-	 * following illustrates:
-	 *
-	 * <pre>
-	 *   |00|01|02|03|04|05|06|07|08|
-	 *   +--------+--------+--------+
-	 * 0 |        |        |        |
-	 *   +-----+--+-----+--+-----+--+
-	 * 1 |     |  |     |  |     |  |
-	 *   +-----+--+-----+--+-----+--+
-	 * 2 |00 ff|01|00 00|00|af 00|00|
-	 * </pre>
-	 *
-	 * This layout consists of repeating sequence (level 0) of static layouts (level
-	 * 1). The static layout consists of a two byte field followed by a one byte
-	 * field.
-	 *
-	 * @param children
-	 * @return
-	 */
-	public static Content.Layout STATIC(Content.Layout... children) {
-		return new AbstractNonTerminalLayout() {
+	public static abstract class StaticNonTerminal extends NonTerminal
+			implements Content.StaticLayout {
 
-			@Override
-			public int numberOfChildren() {
-				return children.length;
-			}
-
-			@Override
-			public int size(Blob blob, int offset) {
-				int start = offset;
-				for(int i=0;i!=children.length;++i) {
-					offset += children[i].size(blob, offset);
-				}
-				return offset - start;
-			}
-
-			@Override
-			protected Content.Layout getChild(int index, Content.Blob blob, int offset) {
-				return children[index];
-			}
-
-			@Override
-			protected int getChildOffset(int child, Blob blob, int offset) {
-				for (int i = 0; i < child; ++i) {
-					offset += children[i].size(blob, offset);
-				}
-				return offset;
-			}
-		};
 	}
 
-
+	
 	// ========================================================================
 	// Constructors
 	// ========================================================================
@@ -534,7 +495,7 @@ public class AbstractLayouts {
 
 	public static void main(String[] args) {
 		Content.Blob blob = ByteBlob.EMPTY;
-		Content.Layout layout = STATIC(PrimitiveLayouts.INT8,PrimitiveLayouts.INT32);
+		Content.Layout layout = RecordLayouts.RECORD(PrimitiveLayouts.INT8, PrimitiveLayouts.INT32);
 		blob = layout.write_i32(2, POSITION(1), blob, 0);
 		blob = layout.write_i8((byte) 127, POSITION(0), blob, 0);
 		System.out.println("BLOB: " + Arrays.toString(blob.get()));

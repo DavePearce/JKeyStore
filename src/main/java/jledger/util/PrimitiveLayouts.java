@@ -9,7 +9,7 @@ public class PrimitiveLayouts {
 	 *
 	 * @return
 	 */
-	public static final Content.Layout INT8 = new AbstractLayouts.AbstractTerminalLayout() {
+	public static final Content.Layout INT8 = new AbstractLayouts.StaticTerminal() {
 
 		@Override
 		public Content.Blob initialise(Content.Blob blob, int offset) {
@@ -30,6 +30,11 @@ public class PrimitiveLayouts {
 		public Content.Blob write_i8(byte value, Content.Blob blob, int offset) {
 			return blob.write(offset, value);
 		}
+
+		@Override
+		public int size() {
+			return 1;
+		}
 	};
 
 	/**
@@ -37,7 +42,7 @@ public class PrimitiveLayouts {
 	 *
 	 * @return
 	 */
-	public static final Content.Layout INT16 = new AbstractLayouts.AbstractTerminalLayout() {
+	public static final Content.Layout INT16 = new AbstractLayouts.StaticTerminal() {
 
 		@Override
 		public Content.Blob initialise(Content.Blob blob, int offset) {
@@ -49,6 +54,11 @@ public class PrimitiveLayouts {
 			return 2;
 		}
 
+		@Override
+		public int size() {
+			return 2;
+		}
+		
 		@Override
 		public short read_i16(Content.Blob blob, int offset) {
 			// FIXME: faster API would be nice
@@ -73,7 +83,7 @@ public class PrimitiveLayouts {
 	 *
 	 * @return
 	 */
-	public static final Content.Layout INT32 = new AbstractLayouts.AbstractTerminalLayout() {
+	public static final Content.Layout INT32 = new AbstractLayouts.StaticTerminal() {
 
 		@Override
 		public Content.Blob initialise(Content.Blob blob, int offset) {
@@ -85,6 +95,11 @@ public class PrimitiveLayouts {
 			return 4;
 		}
 
+		@Override
+		public int size() {
+			return 4;
+		}
+		
 		@Override
 		public int read_i32(Content.Blob blob, int offset) {
 			// FIXME: faster API would be nice
