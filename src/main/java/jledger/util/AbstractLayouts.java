@@ -7,7 +7,7 @@ import jledger.core.Content;
 import jledger.core.Content.Blob;
 import jledger.core.Content.Position;
 
-public class ContentLayouts {
+public class AbstractLayouts {
 
 	// ========================================================================
 	// Positions
@@ -56,7 +56,7 @@ public class ContentLayouts {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static abstract class AbstractTerminalLayout implements Content.Layout {
+	public static abstract class AbstractTerminalLayout implements Content.Layout {
 
 		@Override
 		public boolean read_bit(Position pos, Content.Blob blob, int offset) {
@@ -215,111 +215,6 @@ public class ContentLayouts {
 		}
 	}
 
-	/**
-	 * Describes a fixed-width 8bit signed integer.
-	 *
-	 * @return
-	 */
-	public static final Content.Layout INT8 = new AbstractTerminalLayout() {
-
-		@Override
-		public Content.Blob initialise(Content.Blob blob, int offset) {
-			return write_i8((byte) 0, blob, offset);
-		}
-
-		@Override
-		public int size(Blob blob, int offset) {
-			return 1;
-		}
-
-		@Override
-		public byte read_i8(Content.Blob blob, int offset) {
-			return blob.read(offset);
-		}
-
-		@Override
-		public Content.Blob write_i8(byte value, Content.Blob blob, int offset) {
-			return blob.write(offset, value);
-		}
-	};
-
-	/**
-	 * Describes a fixed-width 16bit signed integer with a big-endian orientation.
-	 *
-	 * @return
-	 */
-	public static final Content.Layout INT16 = new AbstractTerminalLayout() {
-
-		@Override
-		public Content.Blob initialise(Content.Blob blob, int offset) {
-			return write_i16((short) 0, blob, offset);
-		}
-
-		@Override
-		public int size(Blob blob, int offset) {
-			return 2;
-		}
-
-		@Override
-		public short read_i16(Content.Blob blob, int offset) {
-			// FIXME: faster API would be nice
-			byte b1 = blob.read(offset);
-			byte b2 = blob.read(offset + 1);
-			// Recombine bytes
-			return (short) ((b1 << 8) | b2);
-		}
-
-		@Override
-		public Content.Blob write_i16(short value, Content.Blob blob, int offset) {
-			// Convert value into bytes
-			byte b1 = (byte) ((value >> 8) & 0xFF);
-			byte b2 = (byte) (value & 0xFF);
-			// FIXME: faster API would be nice
-			return blob.replace(offset, 2, new byte[] { b1, b2 });
-		}
-	};
-
-	/**
-	 * Describes a fixed-width 32bit signed integer with a big-endian orientation.
-	 *
-	 * @return
-	 */
-	public static final Content.Layout INT32 = new AbstractTerminalLayout() {
-
-		@Override
-		public Content.Blob initialise(Content.Blob blob, int offset) {
-			return write_i32(0, blob, offset);
-		}
-
-		@Override
-		public int size(Blob blob, int offset) {
-			return 4;
-		}
-
-		@Override
-		public int read_i32(Content.Blob blob, int offset) {
-			// FIXME: faster API would be nice
-			byte b1 = blob.read(offset);
-			byte b2 = blob.read(offset + 1);
-			byte b3 = blob.read(offset + 2);
-			byte b4 = blob.read(offset + 3);
-			// Recombine bytes
-			return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
-		}
-
-		@Override
-		public Content.Blob write_i32(int value, Content.Blob blob, int offset) {
-			// Convert value into bytes
-			byte b1 = (byte) ((value >> 24) & 0xFF);
-			byte b2 = (byte) ((value >> 16) & 0xFF);
-			byte b3 = (byte) ((value >> 8) & 0xFF);
-			byte b4 = (byte) (value & 0xFF);
-			// FIXME: faster API would be nice
-			return blob.replace(offset, 4, new byte[] { b1, b2, b3, b4 });
-		}
-
-	};
-
 	// ========================================================================
 	// Non-Terminal Layouts
 	// ========================================================================
@@ -331,7 +226,7 @@ public class ContentLayouts {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static abstract class AbstractNonTerminalLayout implements Content.Layout {
+	public static abstract class AbstractNonTerminalLayout implements Content.Layout {
 
 		@Override
 		public Content.Blob initialise(Content.Blob blob, int offset) {
@@ -551,51 +446,6 @@ public class ContentLayouts {
 		};
 	}
 
-	/**
-	 * Represents a fixed-size repeating sequence of a given layout. Since the array
-	 * has a known fixed size, there is no need to store the array length.
-	 * Furthermore, the size of the layout is static when the child layout is
-	 * static.
-	 *
-	 * @param n
-	 * @param child
-	 * @return
-	 */
-	public static Content.Layout STATIC_ARRAY(int n, Content.Layout child) {
-		return new AbstractNonTerminalLayout() {
-
-			@Override
-			public int numberOfChildren() {
-				return n;
-			}
-
-			@Override
-			public int size(Blob blob, int offset) {
-				int start = offset;
-				for (int i = 0; i != n; ++i) {
-					offset += child.size(blob, offset);
-				}
-				return offset - start;
-			}
-
-			@Override
-			protected Content.Layout getChild(int index, Content.Blob blob, int offset) {
-				if(index < 0 || index >= n) {
-					throw new IndexOutOfBoundsException();
-				} else {
-					return child;
-				}
-			}
-
-			@Override
-			protected int getChildOffset(int c, Blob blob, int offset) {
-				for (int i = 0; i < c; ++i) {
-					offset += child.size(blob, offset);
-				}
-				return offset;
-			}
-		};
-	}
 
 	// ========================================================================
 	// Constructors
@@ -684,7 +534,7 @@ public class ContentLayouts {
 
 	public static void main(String[] args) {
 		Content.Blob blob = ByteBlob.EMPTY;
-		Content.Layout layout = STATIC(INT8,INT32);
+		Content.Layout layout = STATIC(PrimitiveLayouts.INT8,PrimitiveLayouts.INT32);
 		blob = layout.write_i32(2, POSITION(1), blob, 0);
 		blob = layout.write_i8((byte) 127, POSITION(0), blob, 0);
 		System.out.println("BLOB: " + Arrays.toString(blob.get()));

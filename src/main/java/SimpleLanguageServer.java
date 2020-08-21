@@ -5,9 +5,11 @@ import jledger.core.Content;
 import jledger.core.Content.Blob;
 import jledger.core.Content.Layout;
 import jledger.util.ByteBlob;
-import jledger.util.ContentLayouts;
+import jledger.util.AbstractLayouts;
 
-import static jledger.util.ContentLayouts.*;
+import static jledger.util.AbstractLayouts.*;
+import static jledger.util.PrimitiveLayouts.*;
+import static jledger.util.ArrayLayouts.*;
 import jledger.util.NonSequentialLedger;
 import jledger.util.Pair;
 
@@ -41,7 +43,7 @@ public class SimpleLanguageServer implements LanguageServer {
 	private static final Workspace EMPTY_WORKSPACE = new Workspace();
 
 	private static class Workspace implements LanguageServer.Workspace, Content.Proxy {
-		private static final Content.ConstructorLayout<Workspace> LAYOUT = ContentLayouts.CONSTRUCTOR(Workspace::new,
+		private static final Content.ConstructorLayout<Workspace> LAYOUT = AbstractLayouts.CONSTRUCTOR(Workspace::new,
 				STATIC_ARRAY(2, Project.LAYOUT));
 
 		private final Content.Blob blob;
@@ -70,8 +72,8 @@ public class SimpleLanguageServer implements LanguageServer {
 
 		@Override
 		public Project[] list() {
-			Project[] items = new Project[2];
-			//items[0] = ??;
+			Project[] items = new Project[1];
+			items[0] = Project.LAYOUT.construct(blob, 0);
 			return items;
 		}
 
@@ -95,7 +97,7 @@ public class SimpleLanguageServer implements LanguageServer {
 	}
 
 	private static class Project implements LanguageServer.Project, Content.Proxy {
-		private static final Content.ConstructorLayout<Project> LAYOUT = ContentLayouts.CONSTRUCTOR(Project::new,
+		private static final Content.ConstructorLayout<Project> LAYOUT = AbstractLayouts.CONSTRUCTOR(Project::new,
 				STATIC(INT32));
 
 		public Project(Content.Blob blob, int offset) {
@@ -104,8 +106,7 @@ public class SimpleLanguageServer implements LanguageServer {
 
 		@Override
 		public File[] list() {
-			// TODO Auto-generated method stub
-			return null;
+			return new File[0];
 		}
 
 		@Override

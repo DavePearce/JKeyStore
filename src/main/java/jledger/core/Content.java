@@ -248,7 +248,7 @@ public class Content {
 	 *
 	 * @param <T>
 	 */
-	public interface Constructor<T extends Proxy>{
+	public interface Constructor<T> {
 		public T construct(Content.Blob blob, int offset);
 	}
 
@@ -260,7 +260,7 @@ public class Content {
 	 *
 	 * @param <T>
 	 */
-	public interface ConstructorLayout<T extends Proxy> extends Layout, Constructor<T> {
+	public interface ConstructorLayout<T> extends Layout, Constructor<T> {
 
 	}
 
