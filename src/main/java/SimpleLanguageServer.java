@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.HashMap;
 
 import jledger.core.Ledger;
@@ -49,7 +50,8 @@ public class SimpleLanguageServer implements LanguageServer {
 				new Project[0]);
 		private static final Content.ConstructorLayout<Workspace> LAYOUT = RECORD(Workspace::new,
 				PROJECTS);
-
+		private static final Content.Position PROJECTS_FIELD = POSITION(0);
+		//
 		private final Content.Blob blob;
 		private final int offset;
 
@@ -67,10 +69,11 @@ public class SimpleLanguageServer implements LanguageServer {
 			this.offset = offset;
 		}
 
+		@Override
 		public int getOffset() {
 			return 0;
 		}
-		
+
 		@Override
 		public Blob getBlob() {
 			return blob;
@@ -82,11 +85,12 @@ public class SimpleLanguageServer implements LanguageServer {
 		}
 
 		public Workspace add(Project project) {
-			return PROJECTS.append(project);
+			throw new IllegalArgumentException("implement me!");
 		}
-		
+
 		@Override
 		public Project[] list() {
+			// FIXME: this is broken
 			return PROJECTS.read(blob, offset);
 		}
 
@@ -112,15 +116,16 @@ public class SimpleLanguageServer implements LanguageServer {
 	private static class Project implements LanguageServer.Project, Content.Proxy {
 		private static final Content.ConstructorLayout<Project> LAYOUT = RECORD(Project::new,
 				RecordLayouts.RECORD(INT32));
-		
+
 		private final int offset;
 		private final Content.Blob blob;
-		
+
 		public Project(Content.Blob blob, int offset) {
 			this.offset = offset;
 			this.blob = blob;
 		}
 
+		@Override
 		public int getOffset() {
 			return offset;
 		}
@@ -134,7 +139,7 @@ public class SimpleLanguageServer implements LanguageServer {
 		public Layout getLayout() {
 			return LAYOUT;
 		}
-		
+
 		@Override
 		public File[] list() {
 			return new File[0];

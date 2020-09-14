@@ -6,7 +6,7 @@ import jledger.core.Content;
 import jledger.core.Content.Blob;
 
 public class ArrayLayouts {
-	
+
 	/**
 	 * Represents a fixed-size repeating sequence of a given layout. Since the array
 	 * has a known fixed size, there is no need to store the array length.
@@ -18,7 +18,7 @@ public class ArrayLayouts {
 	 * @return
 	 */
 	public static Content.Layout STATIC_ARRAY(int n, Content.Layout child) {
-		return new StaticArrayLayout<Content.Layout>(n,child);
+		return new StaticArrayLayout<>(n,child);
 	}
 
 	/**
@@ -34,7 +34,7 @@ public class ArrayLayouts {
 	public static Content.Layout STATIC_ARRAY(int n, Content.StaticLayout child) {
 		return new StaticArrayStaticLayout<>(n, child);
 	}
-	
+
 	/**
 	 * Represents a fixed-size repeating sequence of a given layout. Since the array
 	 * has a known fixed size, there is no need to store the array length.
@@ -48,7 +48,7 @@ public class ArrayLayouts {
 	 */
 	public static <T> Content.ConstructorLayout<T[]> STATIC_ARRAY(int n, Content.ConstructorLayout<T> child,
 			T... dummy) {
-		return new StaticArrayConstructorLayout<T>(n, child, dummy);
+		return new StaticArrayConstructorLayout<>(n, child, dummy);
 	}
 
 	/**
@@ -64,9 +64,9 @@ public class ArrayLayouts {
 	 */
 	public static <T> Content.StaticConstructorLayout<T[]> STATIC_ARRAY(int n, Content.StaticConstructorLayout<T> child,
 			T... dummy) {
-		return new StaticArrayStaticConstructorLayout<T>(n, child, dummy);
+		return new StaticArrayStaticConstructorLayout<>(n, child, dummy);
 	}
-	
+
 	/**
 	 * Represents a dynamic-size repeating sequence of a given layout. Since the
 	 * array has a unknown size, this is stored as an <code>int32</code>.
@@ -76,9 +76,9 @@ public class ArrayLayouts {
 	 * @return
 	 */
 	public static Content.Layout DYNAMIC_ARRAY(Content.Layout child) {
-		return new DynamicArrayLayout<Content.Layout>(child);
+		return new DynamicArrayLayout<>(child);
 	}
-	
+
 
 	/**
 	 * Represents a dynamic-size repeating sequence of a given layout. Since the
@@ -89,13 +89,13 @@ public class ArrayLayouts {
 	 * @return
 	 */
 	public static <T> Content.ConstructorLayout<T[]> DYNAMIC_ARRAY(Content.ConstructorLayout<T> child, T... dummy) {
-		return new DynamicArrayConstructorLayout<T>(child, dummy);
+		return new DynamicArrayConstructorLayout<>(child, dummy);
 	}
-	
+
 	// =================================================================
 	// Helpers
 	// =================================================================
-	
+
 	private static class StaticArrayLayout<T extends Content.Layout> extends AbstractLayouts.NonTerminal {
 		protected final int n;
 		protected final T child;
@@ -159,7 +159,7 @@ public class ArrayLayouts {
 			return arr;
 		}
 	}
-			
+
 	private static class StaticArrayStaticLayout<T extends Content.StaticLayout>
 			extends AbstractLayouts.StaticNonTerminal {
 		protected final int n;
@@ -170,10 +170,11 @@ public class ArrayLayouts {
 			this.child = child;
 		}
 
+		@Override
 		public int size() {
 			return n * child.size();
 		}
-		
+
 		@Override
 		public int numberOfChildren(Content.Blob blob, int offset) {
 			return n;
@@ -197,8 +198,8 @@ public class ArrayLayouts {
 		protected int getChildOffset(int c, Content.Blob blob, int offset) {
 			return c * child.size();
 		}
-	}		
-	
+	}
+
 	private static class StaticArrayStaticConstructorLayout<T> extends StaticArrayStaticLayout<Content.StaticConstructorLayout<T>>
 			implements Content.StaticConstructorLayout<T[]> {
 		private final T[] dummy;
@@ -224,7 +225,7 @@ public class ArrayLayouts {
 			return arr;
 		}
 	}
-	
+
 	private static class DynamicArrayLayout<T extends Content.Layout>
 			extends AbstractLayouts.NonTerminal {
 		protected final T child;
@@ -238,14 +239,14 @@ public class ArrayLayouts {
 			// Arrays initialised as empty
 			return PrimitiveLayouts.INT32.initialise(blob, offset);
 		}
-		
+
 		@Override
 		public int numberOfChildren(Content.Blob blob, int offset) {
 			return PrimitiveLayouts.INT32.read_i32(null, blob, offset);
 		}
 
 		@Override
-		public int size(Content.Blob blob, int offset) {			
+		public int size(Content.Blob blob, int offset) {
 			int start = offset;
 			int n = numberOfChildren(blob,offset);
 			offset += 4;
@@ -257,9 +258,9 @@ public class ArrayLayouts {
 
 		@Override
 		protected Content.Layout getChild(int index, Content.Blob blob, int offset) {
-			int n = numberOfChildren(blob,offset);
-			if (index < 0 || index >= n) {
-				throw new IndexOutOfBoundsException();
+			int n = numberOfChildren(blob, offset);
+			if (index == 0) {
+				return PrimitiveLayouts.INT32;
 			} else {
 				return child;
 			}
@@ -267,14 +268,16 @@ public class ArrayLayouts {
 
 		@Override
 		protected int getChildOffset(int c, Content.Blob blob, int offset) {
-			offset += 4;
-			for (int i = 0; i < c; ++i) {
-				offset += child.size(blob, offset);
+			if(c > 0) {
+				offset += 4;
+				for (int i = 1; i < c; ++i) {
+					offset += child.size(blob, offset);
+				}
 			}
 			return offset;
 		}
 	}
-	
+
 
 	private static class DynamicArrayConstructorLayout<T> extends DynamicArrayLayout<Content.ConstructorLayout<T>>
 			implements Content.ConstructorLayout<T[]> {

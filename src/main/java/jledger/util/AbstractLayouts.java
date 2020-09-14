@@ -171,7 +171,7 @@ public class AbstractLayouts {
 		public Content.Blob write(Content.Proxy proxy, Position position, Content.Blob blob, int offset) {
 			throw new UnsupportedOperationException();
 		}
-		
+
 		protected boolean read_bit(Content.Blob blob, int offset) {
 			throw new UnsupportedOperationException();
 		}
@@ -219,14 +219,14 @@ public class AbstractLayouts {
 		protected Content.Blob write_bytes(byte[] value,Content.Blob blob, int offset) {
 			throw new UnsupportedOperationException();
 		}
-		
+
 	}
 
 	public static abstract class StaticTerminal extends Terminal
 			implements Content.StaticLayout {
 
 	}
-	
+
 	// ========================================================================
 	// Non-Terminal Layouts
 	// ========================================================================
@@ -385,22 +385,22 @@ public class AbstractLayouts {
 				return child.write(proxy, pos.child(), blob, childOffset);
 			} else if(proxy.getLayout() != this) {
 				throw new IllegalArgumentException("incompatible layout");
-			} else {				
+			} else {
 				// Determine size of the child
 				int mySize = size(blob, offset);
 				// Extract underlying blob
 				Content.Blob proxyBlob = proxy.getBlob();
-				// Readout the bytes representing the object in question			
+				// Readout the bytes representing the object in question
 				byte[] bytes = proxyBlob.read(offset,mySize);
 				// Destruct the object and replace the existing one
 				return blob.replace(offset, mySize, bytes);
-			} 
+			}
 		}
-		
-		
+
+
 		/**
 		 * Generic method for determining the number of children.
-		 * 
+		 *
 		 * @param blob   The blob containing the instantiation of this layout
 		 * @param offset The offset within the enclosing blob of the instantiation of
 		 *               this layout
@@ -444,7 +444,7 @@ public class AbstractLayouts {
 				PrimitiveLayouts.INT32, PrimitiveLayouts.INT32);
 		private final int offset;
 		private final Content.Blob blob;
-		
+
 		public Test(int x, int y) {
 			Content.Blob b = new ByteBlob();
 			this.offset = 0;
@@ -453,7 +453,7 @@ public class AbstractLayouts {
 			b = LAYOUT.write_i32(y,POSITION(1),b,0);
 			this.blob = b;
 		}
-		
+
 		public Test(Content.Blob blob, int offset) {
 			this.offset = offset;
 			this.blob = blob;
@@ -462,11 +462,11 @@ public class AbstractLayouts {
 		public int getX() {
 			return LAYOUT.read_i32(POSITION(0), blob, offset);
 		}
-		
+
 		public int getY() {
 			return LAYOUT.read_i32(POSITION(1), blob, offset);
 		}
-		
+
 		@Override
 		public int getOffset() {
 			return offset;
@@ -481,17 +481,23 @@ public class AbstractLayouts {
 		public Layout getLayout() {
 			return LAYOUT;
 		}
-		
+
+		@Override
 		public String toString() {
 			return "(" + getX() + "," + getY() + ")";
 		}
 	}
-	
+
 	public static void main(String[] args) {
+		Content.Layout layout = ArrayLayouts.DYNAMIC_ARRAY(PrimitiveLayouts.INT32);
 		Content.Blob blob = ByteBlob.EMPTY;
-		blob = Test.LAYOUT.initialise(blob, 0);
-		System.out.println("GOT: " + Test.LAYOUT.read(blob, 0));
-		blob = Test.LAYOUT.write(new Test(1, 2), null, blob, 0);
-		System.out.println("NOW: " + Test.LAYOUT.read(blob, 0));
+		blob = layout.initialise(blob, 0);
+		blob = layout.write_i32(0, POSITION(1), blob, 0);
+		//
+		int n = layout.read_i32(POSITION(0), blob, 0);
+		System.out.println("LENGTH: " + n);
+		for(int i=0;i!=n;++i) {
+			System.out.println("[" + i + "] = " + layout.read_i32(POSITION(1 + i), blob, 0));
+		}
 	}
 }

@@ -11,7 +11,7 @@ public class Content {
 	public interface Proxy {
 		/**
 		 * Get the offset of this proxy object within the blob containing it.
-		 * 
+		 *
 		 * @return
 		 */
 		public int getOffset();
@@ -238,7 +238,7 @@ public class Content {
 
 		/**
 		 * Write a proxy object to a given position within this layout.
-		 * 
+		 *
 		 * @param proxy
 		 * @param position
 		 * @param blob
@@ -246,7 +246,7 @@ public class Content {
 		 * @return
 		 */
 		public Content.Blob write(Proxy proxy, Position position, Content.Blob blob, int offset);
-		
+
 		/**
 		 * Initialise this layout at a given position within a blob. This will
 		 * initialise appropriate default values for fields. For example, an integer may
@@ -254,26 +254,26 @@ public class Content {
 		 *
 		 * @return
 		 */
-		public Content.Blob initialise(Content.Blob blob, int offset);			
+		public Content.Blob initialise(Content.Blob blob, int offset);
 	}
 
 	/**
 	 * Represents a layout whose size is statically known. Knowing that a child
 	 * layout is static can help in some cases. Unfortunately, not all layouts can
 	 * be static by definition.
-	 * 
+	 *
 	 * @author David J. Pearec
 	 *
 	 */
 	public interface StaticLayout extends Layout {
 		/**
 		 * Return the size of this layout in bytes.
-		 * 
+		 *
 		 * @return
 		 */
 		public int size();
 	}
-	
+
 	/**
 	 * A specialised interface which can be used to construct an object proxy for a
 	 * given position within a blob.
@@ -285,7 +285,7 @@ public class Content {
 	public interface Constructor<T> {
 		public T read(Content.Blob blob, int offset);
 	}
-	
+
 	/**
 	 * A specialised layout which allows proxy objects to be constructed directly
 	 * from within.
@@ -309,7 +309,7 @@ public class Content {
 	public interface StaticConstructorLayout<T> extends StaticLayout, ConstructorLayout<T> {
 
 	}
-	
+
 	/**
 	 * Represents an immutable binary blob of data which can be written into a
 	 * ledger. Blobs are immutable data structures which, when written, construct
@@ -346,17 +346,17 @@ public class Content {
 		/**
 		 * Read a given sequence of bytes from a given position in the blob. The entire
 		 * region must be within bounds.
-		 * 
+		 *
 		 * @param index
 		 * @param length
 		 * @return
 		 */
 		public byte[] read(int index, int length);
-		
+
 		/**
 		 * Read a given sequence of bytes from a given position in the blob into a
 		 * prexisting array. The entire region must be within bounds.
-		 * 
+		 *
 		 * @param index     The index within this blob to start reading from
 		 * @param length    The number of bytes to read
 		 * @param dest      The destination byte array
@@ -364,7 +364,7 @@ public class Content {
 		 * @return
 		 */
 		public void read(int index, int length, byte[] dest, int destStart);
-		
+
 		/**
 		 * Write a given byte to a given position within this value. The index does not
 		 * need to be in bounds since blobs are elastic. Thus, writing beyond bounds
