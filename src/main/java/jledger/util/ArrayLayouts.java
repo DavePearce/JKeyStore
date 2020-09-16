@@ -257,6 +257,62 @@ public class ArrayLayouts {
 			return offset - start;
 		}
 
+		@Override
+		public Content.Blob insert_bit(boolean value, Position pos, Content.Blob blob, int offset) {
+			if (pos == null) {
+				throw new IllegalArgumentException("cannot overwrite array with primitive");
+			} else if (pos.index() == 0) {
+				throw new IllegalArgumentException("cannot write directly to array length");
+			}
+			// NOTE: must insert before updating length to catch out-of-bounds errors.
+			blob = super.insert_bit(value, pos, blob, offset);
+			// Update length field (if appropriate)
+			if (pos.child() == null) {
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				blob = PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+			// Done
+			return blob;
+		}
+
+		@Override
+		public Content.Blob insert_i8(byte value, Position pos, Content.Blob blob, int offset) {
+			if (pos == null) {
+				throw new IllegalArgumentException("cannot overwrite array with primitive");
+			} else if(pos.index() == 0) {
+				throw new IllegalArgumentException("cannot write directly to array length");
+			}
+			// NOTE: must insert before updating length to catch out-of-bounds errors.
+			blob = super.insert_i8(value, pos, blob, offset);
+			// Update length field (if appropriate)
+			if (pos.child() == null) {
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				blob = PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+			// Done
+			return blob;
+		}
+
+		@Override
+		public Content.Blob insert_i16(short value, Position pos, Content.Blob blob, int offset) {
+			if (pos == null) {
+				throw new IllegalArgumentException("cannot overwrite array with primitive");
+			} else if(pos.index() == 0) {
+				throw new IllegalArgumentException("cannot write directly to array length");
+			}
+			// NOTE: must insert before updating length to catch out-of-bounds errors.
+			blob = super.insert_i16(value, pos, blob, offset);
+			// Update length field (if appropriate)
+			if (pos.child() == null) {
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				blob = PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+			// Done
+			return blob;
+		}
 
 		@Override
 		public Content.Blob insert_i32(int value, Position pos, Content.Blob blob, int offset) {
@@ -264,12 +320,126 @@ public class ArrayLayouts {
 				throw new IllegalArgumentException("cannot overwrite array with primitive");
 			} else if(pos.index() == 0) {
 				throw new IllegalArgumentException("cannot write directly to array length");
-			} else if (pos.child() == null) {
+			}
+			// NOTE: must insert before updating length to catch out-of-bounds errors.
+			blob = super.insert_i32(value, pos, blob, offset);
+			// Update length field (if appropriate)
+			if (pos.child() == null) {
 				int n = numberOfChildren(blob, offset);
 				// NOTE: makse sense since number of children already includes length field.
 				blob = PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
 			}
-			return super.insert_i32(value, pos, blob, offset);
+			// Done
+			return blob;
+		}
+
+		@Override
+		public Content.Blob insert_bytes(byte[] value, Position pos, Content.Blob blob, int offset) {
+			if (pos == null) {
+				throw new IllegalArgumentException("cannot overwrite array with primitive");
+			} else if (pos.index() == 0) {
+				throw new IllegalArgumentException("cannot write directly to array length");
+			}
+			// NOTE: must insert before updating length to catch out-of-bounds errors.
+			blob = super.insert_bytes(value, pos, blob, offset);
+			// Update length field (if appropriate)
+			if (pos.child() == null) {
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				blob = PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+			// Done
+			return blob;
+		}
+
+		@Override
+		public Content.Blob append_bit(boolean value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				return super.append_bit(value, pos, blob, offset);
+			} else {
+				int size = size(blob,offset);
+				// Insert new value
+				blob = child.insert_bit(value,null,blob,offset + size);
+				// Update length field (if appropriate)
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				return PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+		}
+
+		@Override
+		public Content.Blob append_i8(byte value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				return super.append_i8(value, pos, blob, offset);
+			} else {
+				int size = size(blob,offset);
+				// Insert new value
+				blob = child.insert_i8(value,null,blob,offset + size);
+				// Update length field (if appropriate)
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				return PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+		}
+
+		@Override
+		public Content.Blob append_i16(short value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				return super.append_i16(value, pos, blob, offset);
+			} else {
+				int size = size(blob,offset);
+				// Insert new value
+				blob = child.insert_i16(value,null,blob,offset + size);
+				// Update length field (if appropriate)
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				return PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+		}
+
+		@Override
+		public Content.Blob append_i32(int value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				return super.append_i32(value, pos, blob, offset);
+			} else {
+				int size = size(blob,offset);
+				// Insert new value
+				blob = child.insert_i32(value,null,blob,offset + size);
+				// Update length field (if appropriate)
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				return PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+		}
+
+		@Override
+		public Content.Blob append_i64(long value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				return super.append_i64(value, pos, blob, offset);
+			} else {
+				int size = size(blob,offset);
+				// Insert new value
+				blob = child.insert_i64(value,null,blob,offset + size);
+				// Update length field (if appropriate)
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				return PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+		}
+
+		@Override
+		public Content.Blob append_bytes(byte[] value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				return super.append_bytes(value, pos, blob, offset);
+			} else {
+				int size = size(blob,offset);
+				// Insert new value
+				blob = child.append_bytes(value,null,blob,offset + size);
+				// Update length field (if appropriate)
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				return PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
 		}
 
 		@Override
@@ -285,7 +455,7 @@ public class ArrayLayouts {
 		protected int getChildOffset(int c, Content.Blob blob, int offset) {
 			if(c > 0) {
 				offset += 4;
-				for (int i = 1; i <= c; ++i) {
+				for (int i = 1; i < c; ++i) {
 					offset += child.size(blob, offset);
 				}
 			}

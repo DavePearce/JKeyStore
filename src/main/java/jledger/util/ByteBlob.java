@@ -52,7 +52,7 @@ public class ByteBlob implements Content.Blob {
 	public byte read(int index) {
 		return bytes[index];
 	}
-	
+
 	@Override
 	public byte[] read(int index, int length) {
 		byte[] bs = new byte[length];
@@ -64,7 +64,7 @@ public class ByteBlob implements Content.Blob {
 	public void read(int index, int length, byte[] dest, int destStart) {
 		System.arraycopy(bytes, index, dest, destStart, length);
 	}
-	
+
 	@Override
 	public Diff write(int index, byte b) {
 		return new Diff(this, new Replacement(index, 1, b));
@@ -198,7 +198,7 @@ public class ByteBlob implements Content.Blob {
 			}
 			return bs;
 		}
-		
+
 		@Override
 		public void read(int index, int length, byte[] dest, int destStart) {
 			// FIXME: performance could be improved!!
@@ -206,7 +206,7 @@ public class ByteBlob implements Content.Blob {
 				dest[destStart + i] = read(index + i);
 			}
 		}
-		
+
 		@Override
 		public Diff write(int index, byte b) {
 			// NOTE: compress diffs?
