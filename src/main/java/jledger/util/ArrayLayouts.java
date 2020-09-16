@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
+import jledger.core.Content.Position;
 
 public class ArrayLayouts {
 
@@ -242,7 +243,7 @@ public class ArrayLayouts {
 
 		@Override
 		public int numberOfChildren(Content.Blob blob, int offset) {
-			return PrimitiveLayouts.INT32.read_i32(null, blob, offset);
+			return 1 + PrimitiveLayouts.INT32.read_i32(null, blob, offset);
 		}
 
 		@Override
@@ -250,16 +251,30 @@ public class ArrayLayouts {
 			int start = offset;
 			int n = numberOfChildren(blob,offset);
 			offset += 4;
-			for (int i = 0; i != n; ++i) {
+			for (int i = 1; i < n; ++i) {
 				offset += child.size(blob, offset);
 			}
 			return offset - start;
 		}
 
+
+		@Override
+		public Content.Blob insert_i32(int value, Position pos, Content.Blob blob, int offset) {
+			if (pos == null) {
+				throw new IllegalArgumentException("cannot overwrite array with primitive");
+			} else if(pos.index() == 0) {
+				throw new IllegalArgumentException("cannot write directly to array length");
+			} else if (pos.child() == null) {
+				int n = numberOfChildren(blob, offset);
+				// NOTE: makse sense since number of children already includes length field.
+				blob = PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+			return super.insert_i32(value, pos, blob, offset);
+		}
+
 		@Override
 		protected Content.Layout getChild(int index, Content.Blob blob, int offset) {
-			int n = numberOfChildren(blob, offset);
-			if (index == 0) {
+			if(index == 0) {
 				return PrimitiveLayouts.INT32;
 			} else {
 				return child;
@@ -270,7 +285,7 @@ public class ArrayLayouts {
 		protected int getChildOffset(int c, Content.Blob blob, int offset) {
 			if(c > 0) {
 				offset += 4;
-				for (int i = 1; i < c; ++i) {
+				for (int i = 1; i <= c; ++i) {
 					offset += child.size(blob, offset);
 				}
 			}

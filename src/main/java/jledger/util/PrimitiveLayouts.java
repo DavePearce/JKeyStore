@@ -58,7 +58,7 @@ public class PrimitiveLayouts {
 		public int size() {
 			return 2;
 		}
-		
+
 		@Override
 		public short read_i16(Content.Blob blob, int offset) {
 			// FIXME: faster API would be nice
@@ -75,6 +75,15 @@ public class PrimitiveLayouts {
 			byte b2 = (byte) (value & 0xFF);
 			// FIXME: faster API would be nice
 			return blob.replace(offset, 2, new byte[] { b1, b2 });
+		}
+
+		@Override
+		public Content.Blob insert_i16(short value, Content.Blob blob, int offset) {
+			// Convert value into bytes
+			byte b1 = (byte) ((value >> 8) & 0xFF);
+			byte b2 = (byte) (value & 0xFF);
+			// FIXME: faster API would be nice
+			return blob.replace(offset, 0, new byte[] { b1, b2 });
 		}
 	};
 
@@ -99,7 +108,7 @@ public class PrimitiveLayouts {
 		public int size() {
 			return 4;
 		}
-		
+
 		@Override
 		public int read_i32(Content.Blob blob, int offset) {
 			// FIXME: faster API would be nice
@@ -120,6 +129,17 @@ public class PrimitiveLayouts {
 			byte b4 = (byte) (value & 0xFF);
 			// FIXME: faster API would be nice
 			return blob.replace(offset, 4, new byte[] { b1, b2, b3, b4 });
+		}
+
+		@Override
+		public Content.Blob insert_i32(int value, Content.Blob blob, int offset) {
+			// Convert value into bytes
+			byte b1 = (byte) ((value >> 24) & 0xFF);
+			byte b2 = (byte) ((value >> 16) & 0xFF);
+			byte b3 = (byte) ((value >> 8) & 0xFF);
+			byte b4 = (byte) (value & 0xFF);
+			// FIXME: faster API would be nice
+			return blob.replace(offset, 0, new byte[] { b1, b2, b3, b4 });
 		}
 
 	};

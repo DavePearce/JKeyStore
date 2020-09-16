@@ -87,6 +87,15 @@ public class Content {
 		public int size(Content.Blob blob, int offset);
 
 		/**
+		 * Initialise this layout at a given position within a blob. This will
+		 * initialise appropriate default values for fields. For example, an integer may
+		 * default to zero, whilst an array may default to being empty, etc.
+		 *
+		 * @return
+		 */
+		public Content.Blob initialise(Content.Blob blob, int offset);
+
+		/**
 		 * Read a boolean value from a given position within an instantiation of this
 		 * layout in a blob.
 		 *
@@ -236,6 +245,7 @@ public class Content {
 		 */
 		public Content.Blob write_bytes(byte[] bytes, Position position, Content.Blob blob, int offset);
 
+
 		/**
 		 * Write a proxy object to a given position within this layout.
 		 *
@@ -248,13 +258,95 @@ public class Content {
 		public Content.Blob write(Proxy proxy, Position position, Content.Blob blob, int offset);
 
 		/**
-		 * Initialise this layout at a given position within a blob. This will
-		 * initialise appropriate default values for fields. For example, an integer may
-		 * default to zero, whilst an array may default to being empty, etc.
+		 * Insert a boolean value at a given position within an instantiation of this
+		 * layout in a blob, returning the updated blob.
 		 *
+		 * @param value    The boolean value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
 		 * @return
 		 */
-		public Content.Blob initialise(Content.Blob blob, int offset);
+		public Content.Blob insert_bit(boolean value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Insert a signed 8-bit integer value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob insert_i8(byte value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Insert a signed 16-bit integer value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob insert_i16(short value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Insert a signed 32-bit integer value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob insert_i32(int value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Insert a signed 64-bit integer value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob insert_i64(long value, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Insert sequence of zero or more bytes value at a given position within an
+		 * instantiation of this layout in a blob, returning the updated blob.
+		 *
+		 * @param value    The signed integer value to be written.
+		 * @param position The position to be written.
+		 * @param blob     The blob containing the instantiation of this layout.
+		 * @param offset   The offset within the blob where the instantiation of this
+		 *                 layout begins.
+		 * @return
+		 */
+		public Content.Blob insert_bytes(byte[] bytes, Position position, Content.Blob blob, int offset);
+
+		/**
+		 * Insert a given proxy object at a given position, whilst moving any existing
+		 * children at that offset down. When the position is passed the last child,
+		 * then this is effectively appending one (or more) new children.
+		 *
+		 * @param proxy
+		 * @param position
+		 * @param blob
+		 * @param offset
+		 * @return
+		 */
+		public Content.Blob insert(Proxy proxy, Position position, Content.Blob blob, int offset);
 	}
 
 	/**

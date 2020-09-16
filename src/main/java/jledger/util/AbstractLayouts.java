@@ -172,6 +172,65 @@ public class AbstractLayouts {
 			throw new UnsupportedOperationException();
 		}
 
+		@Override
+		public Content.Blob insert_bit(boolean value, Position pos, Content.Blob blob, int offset) {
+			if(pos != null) {
+				throw new IllegalArgumentException("invalid position");
+			} else {
+				return insert_bit(value,blob,offset);
+			}
+		}
+
+		@Override
+		public Content.Blob insert_i8(byte value, Position pos, Content.Blob blob, int offset) {
+			if(pos != null) {
+				throw new IllegalArgumentException("invalid position");
+			} else {
+				return insert_i8(value,blob,offset);
+			}
+		}
+
+		@Override
+		public Content.Blob insert_i16(short value, Position pos, Content.Blob blob, int offset) {
+			if(pos != null) {
+				throw new IllegalArgumentException("invalid position");
+			} else {
+				return insert_i16(value,blob,offset);
+			}
+		}
+
+		@Override
+		public Content.Blob insert_i32(int value, Position pos, Content.Blob blob, int offset) {
+			if(pos != null) {
+				throw new IllegalArgumentException("invalid position");
+			} else {
+				return insert_i32(value,blob,offset);
+			}
+		}
+
+		@Override
+		public Content.Blob insert_i64(long value, Position pos, Content.Blob blob, int offset) {
+			if(pos != null) {
+				throw new IllegalArgumentException("invalid position");
+			} else {
+				return insert_i64(value,blob,offset);
+			}
+		}
+
+		@Override
+		public Content.Blob insert_bytes(byte[] value, Position pos, Content.Blob blob, int offset) {
+			if(pos != null) {
+				throw new IllegalArgumentException("invalid position");
+			} else {
+				return insert_bytes(value,blob,offset);
+			}
+		}
+
+		@Override
+		public Content.Blob insert(Content.Proxy proxy, Position pos, Content.Blob blob, int offset) {
+			throw new UnsupportedOperationException();
+		}
+
 		protected boolean read_bit(Content.Blob blob, int offset) {
 			throw new UnsupportedOperationException();
 		}
@@ -220,6 +279,29 @@ public class AbstractLayouts {
 			throw new UnsupportedOperationException();
 		}
 
+		protected Content.Blob insert_bit(boolean value, Content.Blob blob, int offset) {
+			throw new UnsupportedOperationException();
+		}
+
+		protected Content.Blob insert_i8(byte value,Content.Blob blob, int offset) {
+			throw new UnsupportedOperationException();
+		}
+
+		protected Content.Blob insert_i16(short value,Content.Blob blob, int offset) {
+			throw new UnsupportedOperationException();
+		}
+
+		protected Content.Blob insert_i32(int value,Content.Blob blob, int offset) {
+			throw new UnsupportedOperationException();
+		}
+
+		protected Content.Blob insert_i64(long value,Content.Blob blob, int offset) {
+			throw new UnsupportedOperationException();
+		}
+
+		protected Content.Blob insert_bytes(byte[] value,Content.Blob blob, int offset) {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	public static abstract class StaticTerminal extends Terminal
@@ -255,134 +337,260 @@ public class AbstractLayouts {
 
 		@Override
 		public boolean read_bit(Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.read_bit(pos.child(), blob, childOffset);
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.read_bit(pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public byte read_i8(Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.read_i8(pos.child(), blob, childOffset);
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.read_i8(pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public short read_i16(Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.read_i16(pos.child(), blob, childOffset);
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.read_i16(pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public int read_i32(Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.read_i32(pos.child(), blob, childOffset);
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.read_i32(pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public long read_i64(Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.read_i64(pos.child(), blob, childOffset);
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.read_i64(pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public byte[] read_bytes(Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.read_bytes(pos.child(), blob, childOffset);
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.read_bytes(pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public Content.Blob write_bit(boolean value, Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.write_bit(value, pos.child(), blob, childOffset);
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.write_bit(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public Content.Blob write_i8(byte value, Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.write_i8(value, pos.child(), blob, childOffset);
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.write_i8(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public Content.Blob write_i16(short value, Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.write_i16(value, pos.child(), blob, childOffset);
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.write_i16(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public Content.Blob write_i32(int value, Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.write_i32(value, pos.child(), blob, childOffset);
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.write_i32(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public Content.Blob write_i64(long value, Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(),blob,offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(),blob,offset);
-			// Write the child at the given position
-			return child.write_i64(value, pos.child(), blob, childOffset);
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.write_i64(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public Content.Blob write_bytes(byte[] value, Position pos, Content.Blob blob, int offset) {
-			// Extract the given child from the position
-			Content.Layout child = getChild(pos.index(), blob, offset);
-			// Determine the offset of the child within enclosing blob
-			int childOffset = getChildOffset(pos.index(), blob, offset);
-			// Write the child at the given position
-			return child.write_bytes(value, pos.child(), blob, childOffset);
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.write_bytes(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
 		}
 
 		@Override
 		public Content.Blob write(Content.Proxy proxy, Position pos, Content.Blob blob, int offset) {
 			// Determine next index within position
 			if(pos != null) {
-				// Extract the given child from the position
-				Content.Layout child = getChild(pos.index(), blob, offset);
-				// Determine the offset of the child within enclosing blob
-				int childOffset = getChildOffset(pos.index(), blob, offset);
-				// Write the proxy down
-				return child.write(proxy, pos.child(), blob, childOffset);
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the proxy down
+					return child.write(proxy, pos.child(), blob, childOffset);
+				}
 			} else if(proxy.getLayout() != this) {
 				throw new IllegalArgumentException("incompatible layout");
 			} else {
@@ -397,6 +605,145 @@ public class AbstractLayouts {
 			}
 		}
 
+		@Override
+		public Content.Blob insert_bit(boolean value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n > numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.insert_bit(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
+		}
+
+		@Override
+		public Content.Blob insert_i8(byte value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n > numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.insert_i8(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
+		}
+
+		@Override
+		public Content.Blob insert_i16(short value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n > numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.insert_i16(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
+		}
+
+		@Override
+		public Content.Blob insert_i32(int value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n > numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.insert_i32(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
+		}
+
+		@Override
+		public Content.Blob insert_i64(long value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n > numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.insert_i64(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
+		}
+
+		@Override
+		public Content.Blob insert_bytes(byte[] value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n > numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.insert_bytes(value, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
+		}
+
+		@Override
+		public Content.Blob insert(Content.Proxy proxy, Position pos, Content.Blob blob, int offset) {
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n > numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the proxy down
+					return child.insert(proxy, pos.child(), blob, childOffset);
+				}
+			} else {
+				throw new UnsupportedOperationException();
+			}
+		}
 
 		/**
 		 * Generic method for determining the number of children.
@@ -492,12 +839,14 @@ public class AbstractLayouts {
 		Content.Layout layout = ArrayLayouts.DYNAMIC_ARRAY(PrimitiveLayouts.INT32);
 		Content.Blob blob = ByteBlob.EMPTY;
 		blob = layout.initialise(blob, 0);
-		blob = layout.write_i32(0, POSITION(1), blob, 0);
+		System.out.println("BLOB: " + blob);
+		blob = layout.insert_i32(2, POSITION(1), blob, 0);
+		System.out.println("BLOB: " + blob);
 		//
 		int n = layout.read_i32(POSITION(0), blob, 0);
 		System.out.println("LENGTH: " + n);
-		for(int i=0;i!=n;++i) {
-			System.out.println("[" + i + "] = " + layout.read_i32(POSITION(1 + i), blob, 0));
+		for(int i=1;i<=n;++i) {
+			System.out.println("[" + i + "] = " + layout.read_i32(POSITION(i), blob, 0));
 		}
 	}
 }
