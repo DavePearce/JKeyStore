@@ -28,6 +28,12 @@ public class Content {
 		 * @return
 		 */
 		public Content.Layout getLayout();
+
+		/**
+		 * Convert proxy into a byte sequence.
+		 * @return
+		 */
+		public byte[] toBytes();
 	}
 
 	/**

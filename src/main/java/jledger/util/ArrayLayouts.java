@@ -422,6 +422,21 @@ public class ArrayLayouts {
 				blob = child.insert_i64(value,null,blob,offset + size);
 				// Update length field (if appropriate)
 				int n = numberOfChildren(blob, offset);
+				// NOTE: makes sense since number of children already includes length field.
+				return PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
+			}
+		}
+
+		@Override
+		public Content.Blob append(Content.Proxy value, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				return super.append(value, pos, blob, offset);
+			} else {
+				int size = size(blob,offset);
+				// Insert new value
+				blob = child.insert(value, null, blob, offset + size);
+				// Update length field (if appropriate)
+				int n = numberOfChildren(blob, offset);
 				// NOTE: makse sense since number of children already includes length field.
 				return PrimitiveLayouts.INT32.write_i32(n, null, blob, offset);
 			}

@@ -47,6 +47,50 @@ public class AbstractLayouts {
 	}
 
 	// ========================================================================
+	// Proxy
+	// ========================================================================
+
+	public static class Proxy implements Content.Proxy {
+		protected final Content.Layout layout;
+		protected final Content.Blob blob;
+		protected final int offset;
+
+		public Proxy(Content.Layout layout) {
+			this.layout = layout;
+			this.blob = layout.initialise(ByteBlob.EMPTY, 0);
+			this.offset = 0;
+
+		}
+
+		public Proxy(Content.Layout layout, Content.Blob blob, int offset) {
+			this.layout = layout;
+			this.blob = blob;
+			this.offset = offset;
+		}
+
+		@Override
+		public Blob getBlob() {
+			return blob;
+		}
+
+		@Override
+		public int getOffset() {
+			return offset;
+		}
+
+		@Override
+		public Layout getLayout() {
+			return layout;
+		}
+
+		@Override
+		public byte[] toBytes() {
+			int size = layout.size(blob, offset);
+			return blob.read(offset, size);
+		}
+	}
+
+	// ========================================================================
 	// Terminal Layouts
 	// ========================================================================
 
@@ -810,6 +854,26 @@ public class AbstractLayouts {
 		}
 
 		@Override
+		public Content.Blob insert(Content.Proxy proxy, Position pos, Content.Blob blob, int offset) {
+			if (pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n > numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the proxy down
+					return child.insert(proxy, pos.child(), blob, childOffset);
+				}
+			} else {
+				return blob.replace(offset, 0, proxy.toBytes());
+			}
+		}
+
+		@Override
 		public Content.Blob append(Content.Proxy proxy, Position pos, Content.Blob blob, int offset) {
 			if(pos != null) {
 				int n = pos.index();
@@ -822,7 +886,7 @@ public class AbstractLayouts {
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the proxy down
-					return child.insert(proxy, pos.child(), blob, childOffset);
+					return child.append(proxy, pos.child(), blob, childOffset);
 				}
 			} else {
 				throw new UnsupportedOperationException();
@@ -949,27 +1013,6 @@ public class AbstractLayouts {
 			}
 		}
 
-		@Override
-		public Content.Blob insert(Content.Proxy proxy, Position pos, Content.Blob blob, int offset) {
-			if(pos != null) {
-				int n = pos.index();
-				// Sanity check bounds
-				if (n < 0 || n > numberOfChildren(blob, offset)) {
-					throw new IllegalArgumentException("invalid child");
-				} else {
-					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
-					// Determine the offset of the child within enclosing blob
-					int childOffset = getChildOffset(n, blob, offset);
-					// Write the proxy down
-					return child.insert(proxy, pos.child(), blob, childOffset);
-				}
-			} else {
-				throw new UnsupportedOperationException();
-			}
-		}
-
-
 		/**
 		 * Generic method for determining the number of children.
 		 *
@@ -1011,24 +1054,16 @@ public class AbstractLayouts {
 
 	}
 
-	private static class Test implements Content.Proxy {
+	private static class Test extends Proxy {
 		private static final Content.ConstructorLayout<Test> LAYOUT = RecordLayouts.RECORD(Test::new,
-				PrimitiveLayouts.INT32, PrimitiveLayouts.INT32);
-		private final int offset;
-		private final Content.Blob blob;
+				PrimitiveLayouts.INT32(0), PrimitiveLayouts.INT32(1));
 
-		public Test(int x, int y) {
-			Content.Blob b = new ByteBlob();
-			this.offset = 0;
-			b = LAYOUT.initialise(b, 0);
-			b = LAYOUT.write_i32(x,POSITION(0),b,0);
-			b = LAYOUT.write_i32(y,POSITION(1),b,0);
-			this.blob = b;
+		public Test() {
+			super(LAYOUT);
 		}
 
 		public Test(Content.Blob blob, int offset) {
-			this.offset = offset;
-			this.blob = blob;
+			super(LAYOUT,blob,offset);
 		}
 
 		public int getX() {
@@ -1061,19 +1096,7 @@ public class AbstractLayouts {
 	}
 
 	public static void main(String[] args) {
-		Content.Layout layout = ArrayLayouts.DYNAMIC_ARRAY(PrimitiveLayouts.INT32);
-		Content.Blob blob = ByteBlob.EMPTY;
-		blob = layout.initialise(blob, 0);
-		System.out.println("BLOB: " + blob);
-		//blob = layout.insert_i32(2, POSITION(1), blob, 0);
-		blob = layout.append_i32(3, null, blob, 0);
-		blob = layout.append_i32(6, null, blob, 0);
-		System.out.println("BLOB: " + Arrays.toString(blob.read()));
-		//
-		int n = layout.read_i32(POSITION(0), blob, 0);
-		System.out.println("LENGTH: " + n);
-		for(int i=1;i<=n;++i) {
-			System.out.println("[" + i + "] = " + layout.read_i32(POSITION(i), blob, 0));
-		}
+		Test t = new Test();
+		System.out.println("GOT: " + t.getX() + ", " + t.getY());
 	}
 }
