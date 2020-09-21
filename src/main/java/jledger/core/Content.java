@@ -8,7 +8,7 @@ public class Content {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Proxy {
+	public interface Proxy<T> {
 		/**
 		 * Get the offset of this proxy object within the blob containing it.
 		 *
@@ -27,7 +27,7 @@ public class Content {
 		 *
 		 * @return
 		 */
-		public Content.Layout getLayout();
+		public Content.Layout<T> getLayout();
 
 		/**
 		 * Convert proxy into a byte sequence.
@@ -81,7 +81,7 @@ public class Content {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Layout {
+	public interface Layout<T> {
 
 		/**
 		 * Return the size (in bytes) of this layouts instantiation in a given blob.
@@ -100,6 +100,13 @@ public class Content {
 		 * @return
 		 */
 		public Content.Blob initialise(Content.Blob blob, int offset);
+
+		/**
+		 * Return a constructor for this layout.
+		 *
+		 * @return
+		 */
+		public Content.Constructor<T> constructor();
 
 		/**
 		 * Read a boolean value from a given position within an instantiation of this
@@ -172,6 +179,10 @@ public class Content {
 		 * @return
 		 */
 		public byte[] read_bytes(Position position, Content.Blob blob, int offset);
+
+		public <S> S read(Class<S> kind, Position position, Content.Blob blob, int offset);
+
+		public T read(Content.Blob blob, int offset);
 
 		/**
 		 * Write a boolean value at a given position within an instantiation of this
@@ -455,7 +466,7 @@ public class Content {
 	 * @author David J. Pearec
 	 *
 	 */
-	public interface StaticLayout extends Layout {
+	public interface StaticLayout<T> extends Layout<T> {
 		/**
 		 * Return the size of this layout in bytes.
 		 *
@@ -474,30 +485,6 @@ public class Content {
 	 */
 	public interface Constructor<T> {
 		public T read(Content.Blob blob, int offset);
-	}
-
-	/**
-	 * A specialised layout which allows proxy objects to be constructed directly
-	 * from within.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 */
-	public interface ConstructorLayout<T> extends Layout, Constructor<T> {
-
-	}
-
-	/**
-	 * A specialised layout which allows proxy objects to be constructed directly
-	 * from within.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 */
-	public interface StaticConstructorLayout<T> extends StaticLayout, ConstructorLayout<T> {
-
 	}
 
 	/**

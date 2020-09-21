@@ -14,7 +14,7 @@ import jledger.util.RecordLayouts;
 import static java.nio.file.StandardWatchEventKinds.*;
 
 public class BuildServer {
-	private final NonSequentialLedger<Directory> ledger = new NonSequentialLedger<>(Directory.LAYOUT, 0);
+	private final NonSequentialLedger<Directory> ledger = new NonSequentialLedger<>(Directory.LAYOUT, 10);
 
 	public BuildServer() {
 		// Initialiser with an empty directory
@@ -45,8 +45,8 @@ public class BuildServer {
 		return r;
 	}
 
-	private static final class Directory extends AbstractLayouts.Proxy {
-		public static final Content.ConstructorLayout<Directory> LAYOUT = RecordLayouts.RECORD(Directory::new,
+	private static final class Directory extends AbstractLayouts.Proxy<Directory> {
+		public static final Content.Layout<Directory> LAYOUT = RecordLayouts.RECORD(Directory::new,
 				ArrayLayouts.DYNAMIC_ARRAY(Entry.LAYOUT));
 
 		public Directory() {
@@ -68,24 +68,24 @@ public class BuildServer {
 		}
 
 		public Entry get(int i) {
-			return null;
+			return LAYOUT.read(Entry.class, POSITION(0, i + 1), blob, offset);
 		}
 
 		@Override
 		public String toString() {
 			String r = "{";
 			for (int i = 0; i != size(); ++i) {
-				if(i != 0) {
+				if (i != 0) {
 					r += ",";
 				}
 				r += get(i);
 			}
-			return r;
+			return r + "}";
 		}
 	}
 
-	private static final class Entry extends AbstractLayouts.Proxy {
-		public static final Content.Layout LAYOUT = PrimitiveLayouts.INT32;
+	private static final class Entry extends AbstractLayouts.Proxy<Entry> {
+		public static final Content.Layout<Entry> LAYOUT = RecordLayouts.RECORD(Entry::new, PrimitiveLayouts.INT32);
 
 		public Entry() {
 			super(LAYOUT);
@@ -96,7 +96,7 @@ public class BuildServer {
 		}
 
 		public Entry set(int value) {
-			return new Entry(LAYOUT.write_i32(value, null, blob, value), offset);
+			return new Entry(LAYOUT.write_i32(value, POSITION(0), blob, value), offset);
 		}
 	}
 

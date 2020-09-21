@@ -1,6 +1,9 @@
 package jledger.util;
 
 import jledger.core.Content;
+import jledger.core.Content.Blob;
+import jledger.core.Content.Constructor;
+import jledger.core.Content.Position;
 
 public class PrimitiveLayouts {
 
@@ -10,8 +13,8 @@ public class PrimitiveLayouts {
 	 * @Param v Default initial value
 	 * @return
 	 */
-	public static final Content.Layout INT8(byte v) {
-		return new AbstractLayouts.StaticTerminal() {
+	public static final Content.Layout<Byte> INT8(byte v) {
+		return new AbstractLayouts.StaticTerminal<Byte>() {
 			@Override
 			public Content.Blob initialise(Content.Blob blob, int offset) {
 				return write_i8(v, blob, offset);
@@ -36,6 +39,26 @@ public class PrimitiveLayouts {
 			public int size() {
 				return 1;
 			}
+
+			@Override
+			public Constructor<Byte> constructor() {
+				return (b, o) -> this.read_i8(b, o);
+			}
+
+			@Override
+			public <S> S read(Class<S> kind, Position position, Blob blob, int offset) {
+				if(kind == Byte.class) {
+					Byte v = read_i8(blob, offset);
+					return (S) v;
+				} else {
+					return super.read(kind, position, blob, offset);
+				}
+			}
+
+			@Override
+			public Byte read(Blob blob, int offset) {
+				return read_i8(blob,offset);
+			}
 		};
 	}
 
@@ -45,8 +68,8 @@ public class PrimitiveLayouts {
 	 * @Param v Default initial value
 	 * @return
 	 */
-	public static final Content.Layout INT16(short v) {
-		return new AbstractLayouts.StaticTerminal() {
+	public static final Content.Layout<Short> INT16(short v) {
+		return new AbstractLayouts.StaticTerminal<Short>() {
 
 			@Override
 			public Content.Blob initialise(Content.Blob blob, int offset) {
@@ -89,6 +112,26 @@ public class PrimitiveLayouts {
 				// FIXME: faster API would be nice
 				return blob.replace(offset, 0, new byte[] { b1, b2 });
 			}
+
+			@Override
+			public Constructor<Short> constructor() {
+				return (b, o) -> this.read_i16(b, o);
+			}
+
+			@Override
+			public <S> S read(Class<S> kind, Position position, Blob blob, int offset) {
+				if(kind == Short.class) {
+					Short v = read_i16(blob, offset);
+					return (S) v;
+				} else {
+					return super.read(kind, position, blob, offset);
+				}
+			}
+
+			@Override
+			public Short read(Blob blob, int offset) {
+				return read_i16(blob,offset);
+			}
 		};
 	}
 
@@ -99,8 +142,8 @@ public class PrimitiveLayouts {
 	 * @Param v Default initial value
 	 * @return
 	 */
-	public static final Content.Layout INT32(int v) {
-		return new AbstractLayouts.StaticTerminal() {
+	public static final Content.Layout<Integer> INT32(int v) {
+		return new AbstractLayouts.StaticTerminal<Integer>() {
 
 			@Override
 			public Content.Blob initialise(Content.Blob blob, int offset) {
@@ -150,6 +193,25 @@ public class PrimitiveLayouts {
 				return blob.replace(offset, 0, new byte[] { b1, b2, b3, b4 });
 			}
 
+			@Override
+			public Constructor<Integer> constructor() {
+				return (b, o) -> this.read_i32(b, o);
+			}
+
+			@Override
+			public <S> S read(Class<S> kind, Position position, Blob blob, int offset) {
+				if(kind == Integer.class) {
+					Integer v = read_i32(blob, offset);
+					return (S) v;
+				} else {
+					return super.read(kind, position, blob, offset);
+				}
+			}
+
+			@Override
+			public Integer read(Blob blob, int offset) {
+				return read_i32(blob,offset);
+			}
 		};
 	}
 
@@ -160,7 +222,7 @@ public class PrimitiveLayouts {
 	 * @Param v Default initial value
 	 * @return
 	 */
-	public static final Content.Layout INT8 = INT8((byte) 0);
+	public static final Content.Layout<Byte> INT8 = INT8((byte) 0);
 
 	/**
 	 * Describes a fixed-width 16bit signed integer with a big-endian orientation
@@ -169,7 +231,7 @@ public class PrimitiveLayouts {
 	 * @Param v Default initial value
 	 * @return
 	 */
-	public static final Content.Layout INT16 = INT16((short) 0);
+	public static final Content.Layout<Short> INT16 = INT16((short) 0);
 	/**
 	 * Describes a fixed-width 32bit signed integer with a big-endian orientation
 	 * and an initial value of zero.
@@ -177,5 +239,5 @@ public class PrimitiveLayouts {
 	 * @Param v Default initial value
 	 * @return
 	 */
-	public static final Content.Layout INT32 = INT32(0);
+	public static final Content.Layout<Integer> INT32 = INT32(0);
 }

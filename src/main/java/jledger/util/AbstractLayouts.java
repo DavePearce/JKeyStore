@@ -5,6 +5,7 @@ import java.util.function.Function;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
+import jledger.core.Content.Constructor;
 import jledger.core.Content.Layout;
 import jledger.core.Content.Position;
 
@@ -50,19 +51,19 @@ public class AbstractLayouts {
 	// Proxy
 	// ========================================================================
 
-	public static class Proxy implements Content.Proxy {
-		protected final Content.Layout layout;
+	public static class Proxy<T> implements Content.Proxy<T> {
+		protected final Content.Layout<T> layout;
 		protected final Content.Blob blob;
 		protected final int offset;
 
-		public Proxy(Content.Layout layout) {
+		public Proxy(Content.Layout<T> layout) {
 			this.layout = layout;
 			this.blob = layout.initialise(ByteBlob.EMPTY, 0);
 			this.offset = 0;
 
 		}
 
-		public Proxy(Content.Layout layout, Content.Blob blob, int offset) {
+		public Proxy(Content.Layout<T> layout, Content.Blob blob, int offset) {
 			this.layout = layout;
 			this.blob = blob;
 			this.offset = offset;
@@ -79,7 +80,7 @@ public class AbstractLayouts {
 		}
 
 		@Override
-		public Layout getLayout() {
+		public Layout<T> getLayout() {
 			return layout;
 		}
 
@@ -101,7 +102,7 @@ public class AbstractLayouts {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class Terminal implements Content.Layout {
+	public static abstract class Terminal<T> implements Content.Layout<T> {
 
 		@Override
 		public boolean read_bit(Position pos, Content.Blob blob, int offset) {
@@ -155,6 +156,11 @@ public class AbstractLayouts {
 			} else {
 				return read_bytes(blob,offset);
 			}
+		}
+
+		@Override
+		public <S> S read(Class<S> kind, Position pos, Content.Blob blob, int offset) {
+			throw new IllegalArgumentException("invalid position");
 		}
 
 		@Override
@@ -272,7 +278,7 @@ public class AbstractLayouts {
 
 		@Override
 		public Content.Blob insert(Content.Proxy proxy, Position pos, Content.Blob blob, int offset) {
-			throw new UnsupportedOperationException();
+			return blob.replace(offset, 0, proxy.toBytes());
 		}
 
 
@@ -432,8 +438,8 @@ public class AbstractLayouts {
 		}
 	}
 
-	public static abstract class StaticTerminal extends Terminal
-			implements Content.StaticLayout {
+	public static abstract class StaticTerminal<T> extends Terminal<T>
+			implements Content.StaticLayout<T> {
 
 	}
 
@@ -448,13 +454,23 @@ public class AbstractLayouts {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class NonTerminal implements Content.Layout {
+	public static abstract class NonTerminal<T> implements Content.Layout<T> {
+		private final Content.Constructor<T> constructor;
+
+		public NonTerminal(Content.Constructor<T> constructor) {
+			this.constructor = constructor;
+		}
+
+		@Override
+		public Content.Constructor<T> constructor() {
+			return constructor;
+		}
 
 		@Override
 		public Content.Blob initialise(Content.Blob blob, int offset) {
 			for(int i=0;i!=numberOfChildren(blob,offset);++i) {
 				// Extract the given child from the position
-				Content.Layout child = getChild(i,blob,offset);
+				Content.Layout<?> child = getChild(i,blob,offset);
 				// Determine the offset of the child within enclosing blob
 				int childOffset = getChildOffset(i, blob, offset);
 				// Initialise the child
@@ -472,7 +488,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -492,7 +508,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -512,7 +528,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -532,7 +548,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -552,7 +568,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -572,7 +588,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -584,6 +600,38 @@ public class AbstractLayouts {
 		}
 
 		@Override
+		public <S> S read(Class<S> kind, Position pos, Content.Blob blob,
+				int offset) {
+			if(pos != null) {
+				int n = pos.index();
+				// Sanity check bounds
+				if (n < 0 || n >= numberOfChildren(blob, offset)) {
+					throw new IllegalArgumentException("invalid child");
+				} else {
+					// Extract the given child from the position
+					Content.Layout<?> child = getChild(n, blob, offset);
+					// Determine the offset of the child within enclosing blob
+					int childOffset = getChildOffset(n, blob, offset);
+					// Write the child at the given position
+					return child.read(kind, pos.child(), blob, childOffset);
+				}
+			} else {
+				T item = constructor.read(blob, offset);
+				// Dynamic cast
+				if(kind.isInstance(item)) {
+					return (S) item;
+				} else {
+					throw new IllegalArgumentException("invalid proxy kind");
+				}
+			}
+		}
+
+		@Override
+		public T read(Content.Blob blob, int offset) {
+			return constructor.read(blob, offset);
+		}
+
+		@Override
 		public Content.Blob write_bit(boolean value, Position pos, Content.Blob blob, int offset) {
 			if(pos != null) {
 				int n = pos.index();
@@ -592,7 +640,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -612,7 +660,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -632,7 +680,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -652,7 +700,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -672,7 +720,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -692,7 +740,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -713,7 +761,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the proxy down
@@ -742,7 +790,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -762,7 +810,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -782,7 +830,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -802,7 +850,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -822,7 +870,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -842,7 +890,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -862,7 +910,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the proxy down
@@ -882,7 +930,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the proxy down
@@ -902,7 +950,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -922,7 +970,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -942,7 +990,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -962,7 +1010,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -982,7 +1030,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -1002,7 +1050,7 @@ public class AbstractLayouts {
 					throw new IllegalArgumentException("invalid child");
 				} else {
 					// Extract the given child from the position
-					Content.Layout child = getChild(n, blob, offset);
+					Content.Layout<?> child = getChild(n, blob, offset);
 					// Determine the offset of the child within enclosing blob
 					int childOffset = getChildOffset(n, blob, offset);
 					// Write the child at the given position
@@ -1049,13 +1097,17 @@ public class AbstractLayouts {
 	}
 
 
-	public static abstract class StaticNonTerminal extends NonTerminal
-			implements Content.StaticLayout {
+	public static abstract class StaticNonTerminal<T> extends NonTerminal<T>
+			implements Content.StaticLayout<T> {
+
+		public StaticNonTerminal(Constructor<T> constructor) {
+			super(constructor);
+		}
 
 	}
 
 	private static class Test extends Proxy {
-		private static final Content.ConstructorLayout<Test> LAYOUT = RecordLayouts.RECORD(Test::new,
+		private static final Content.Layout<Test> LAYOUT = RecordLayouts.RECORD(Test::new,
 				PrimitiveLayouts.INT32(0), PrimitiveLayouts.INT32(1));
 
 		public Test() {

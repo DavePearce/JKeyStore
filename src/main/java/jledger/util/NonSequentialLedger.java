@@ -2,14 +2,13 @@ package jledger.util;
 
 import jledger.core.Content;
 import jledger.core.Ledger;
-import jledger.core.Content.ConstructorLayout;
 
 public class NonSequentialLedger<T extends Content.Proxy> implements Ledger<T> {
-	private final ConstructorLayout<T> layout;
+	private final Content.Layout<T> layout;
 	private int length;
 	private Content.Blob[] ledger;
 
-	public NonSequentialLedger(ConstructorLayout<T> layout, int capacity) {
+	public NonSequentialLedger(Content.Layout<T> layout, int capacity) {
 		this.layout = layout;
 		this.ledger = new Content.Blob[capacity];
 	}
