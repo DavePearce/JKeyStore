@@ -6,136 +6,6 @@ import jledger.core.Content.Constructor;
 import jledger.core.Content.Position;
 
 public class PrimitiveLayouts {
-
-	/**
-	 * Describes a fixed-width 8bit signed integer.
-	 *
-	 * @Param v Default initial value
-	 * @return
-	 */
-	public static final Content.Layout<Byte> INT8(byte v) {
-		return new AbstractLayouts.StaticTerminal<Byte>() {
-			@Override
-			public Content.Blob initialise(Content.Blob blob, int offset) {
-				return write_i8(v, blob, offset);
-			}
-
-			@Override
-			public int size(Content.Blob blob, int offset) {
-				return 1;
-			}
-
-			@Override
-			public byte read_i8(Content.Blob blob, int offset) {
-				return blob.read(offset);
-			}
-
-			@Override
-			public Content.Blob write_i8(byte value, Content.Blob blob, int offset) {
-				return blob.write(offset, value);
-			}
-
-			@Override
-			public int size() {
-				return 1;
-			}
-
-			@Override
-			public Constructor<Byte> constructor() {
-				return (b, o) -> this.read_i8(b, o);
-			}
-
-			@Override
-			public <S> S read(Class<S> kind, Position position, Blob blob, int offset) {
-				if(kind == Byte.class) {
-					Byte v = read_i8(blob, offset);
-					return (S) v;
-				} else {
-					return super.read(kind, position, blob, offset);
-				}
-			}
-
-			@Override
-			public Byte read(Blob blob, int offset) {
-				return read_i8(blob,offset);
-			}
-		};
-	}
-
-	/**
-	 * Describes a fixed-width 16bit signed integer with a big-endian orientation.
-	 *
-	 * @Param v Default initial value
-	 * @return
-	 */
-	public static final Content.Layout<Short> INT16(short v) {
-		return new AbstractLayouts.StaticTerminal<Short>() {
-
-			@Override
-			public Content.Blob initialise(Content.Blob blob, int offset) {
-				return write_i16(v, blob, offset);
-			}
-
-			@Override
-			public int size(Content.Blob blob, int offset) {
-				return 2;
-			}
-
-			@Override
-			public int size() {
-				return 2;
-			}
-
-			@Override
-			public short read_i16(Content.Blob blob, int offset) {
-				// FIXME: faster API would be nice
-				byte b1 = blob.read(offset);
-				byte b2 = blob.read(offset + 1);
-				// Recombine bytes
-				return (short) ((b1 << 8) | b2);
-			}
-
-			@Override
-			public Content.Blob write_i16(short value, Content.Blob blob, int offset) {
-				// Convert value into bytes
-				byte b1 = (byte) ((value >> 8) & 0xFF);
-				byte b2 = (byte) (value & 0xFF);
-				// FIXME: faster API would be nice
-				return blob.replace(offset, 2, new byte[] { b1, b2 });
-			}
-
-			@Override
-			public Content.Blob insert_i16(short value, Content.Blob blob, int offset) {
-				// Convert value into bytes
-				byte b1 = (byte) ((value >> 8) & 0xFF);
-				byte b2 = (byte) (value & 0xFF);
-				// FIXME: faster API would be nice
-				return blob.replace(offset, 0, new byte[] { b1, b2 });
-			}
-
-			@Override
-			public Constructor<Short> constructor() {
-				return (b, o) -> this.read_i16(b, o);
-			}
-
-			@Override
-			public <S> S read(Class<S> kind, Position position, Blob blob, int offset) {
-				if(kind == Short.class) {
-					Short v = read_i16(blob, offset);
-					return (S) v;
-				} else {
-					return super.read(kind, position, blob, offset);
-				}
-			}
-
-			@Override
-			public Short read(Blob blob, int offset) {
-				return read_i16(blob,offset);
-			}
-		};
-	}
-
-
 	/**
 	 * Describes a fixed-width 32bit signed integer with a big-endian orientation.
 	 *
@@ -143,95 +13,9 @@ public class PrimitiveLayouts {
 	 * @return
 	 */
 	public static final Content.Layout<Integer> INT32(int v) {
-		return new AbstractLayouts.StaticTerminal<Integer>() {
-
-			@Override
-			public Content.Blob initialise(Content.Blob blob, int offset) {
-				return write_i32(v, blob, offset);
-			}
-
-			@Override
-			public int size(Content.Blob blob, int offset) {
-				return 4;
-			}
-
-			@Override
-			public int size() {
-				return 4;
-			}
-
-			@Override
-			public int read_i32(Content.Blob blob, int offset) {
-				// FIXME: faster API would be nice
-				byte b1 = blob.read(offset);
-				byte b2 = blob.read(offset + 1);
-				byte b3 = blob.read(offset + 2);
-				byte b4 = blob.read(offset + 3);
-				// Recombine bytes
-				return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
-			}
-
-			@Override
-			public Content.Blob write_i32(int value, Content.Blob blob, int offset) {
-				// Convert value into bytes
-				byte b1 = (byte) ((value >> 24) & 0xFF);
-				byte b2 = (byte) ((value >> 16) & 0xFF);
-				byte b3 = (byte) ((value >> 8) & 0xFF);
-				byte b4 = (byte) (value & 0xFF);
-				// FIXME: faster API would be nice
-				return blob.replace(offset, 4, new byte[] { b1, b2, b3, b4 });
-			}
-
-			@Override
-			public Content.Blob insert_i32(int value, Content.Blob blob, int offset) {
-				// Convert value into bytes
-				byte b1 = (byte) ((value >> 24) & 0xFF);
-				byte b2 = (byte) ((value >> 16) & 0xFF);
-				byte b3 = (byte) ((value >> 8) & 0xFF);
-				byte b4 = (byte) (value & 0xFF);
-				// FIXME: faster API would be nice
-				return blob.replace(offset, 0, new byte[] { b1, b2, b3, b4 });
-			}
-
-			@Override
-			public Constructor<Integer> constructor() {
-				return (b, o) -> this.read_i32(b, o);
-			}
-
-			@Override
-			public <S> S read(Class<S> kind, Position position, Blob blob, int offset) {
-				if(kind == Integer.class) {
-					Integer v = read_i32(blob, offset);
-					return (S) v;
-				} else {
-					return super.read(kind, position, blob, offset);
-				}
-			}
-
-			@Override
-			public Integer read(Blob blob, int offset) {
-				return read_i32(blob,offset);
-			}
-		};
+		return new INT32(v);
 	}
 
-	/**
-	 * Describes a fixed-width 8bit signed integer with a big-endian orientation
-	 * and an initial value of zero.
-	 *
-	 * @Param v Default initial value
-	 * @return
-	 */
-	public static final Content.Layout<Byte> INT8 = INT8((byte) 0);
-
-	/**
-	 * Describes a fixed-width 16bit signed integer with a big-endian orientation
-	 * and an initial value of zero.
-	 *
-	 * @Param v Default initial value
-	 * @return
-	 */
-	public static final Content.Layout<Short> INT16 = INT16((short) 0);
 	/**
 	 * Describes a fixed-width 32bit signed integer with a big-endian orientation
 	 * and an initial value of zero.
@@ -240,4 +24,57 @@ public class PrimitiveLayouts {
 	 * @return
 	 */
 	public static final Content.Layout<Integer> INT32 = INT32(0);
+
+	public static class INT32 implements Content.StaticLayout<Integer> {
+		private final int n;
+
+		public INT32(int n) {
+			this.n = n;
+		}
+
+		@Override
+		public Content.Blob initialise(Content.Blob blob, int offset) {
+			return write_i32(n, blob, offset);
+		}
+
+		@Override
+		public int size(Content.Blob blob, int offset) {
+			return 4;
+		}
+
+		@Override
+		public int size() {
+			return 4;
+		}
+
+		public int read_i32(Content.Blob blob, int offset) {
+			// FIXME: faster API would be nice
+			byte b1 = blob.read(offset);
+			byte b2 = blob.read(offset + 1);
+			byte b3 = blob.read(offset + 2);
+			byte b4 = blob.read(offset + 3);
+			// Recombine bytes
+			return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+		}
+
+		public Content.Blob write_i32(int value, Content.Blob blob, int offset) {
+			// Convert value into bytes
+			byte b1 = (byte) ((value >> 24) & 0xFF);
+			byte b2 = (byte) ((value >> 16) & 0xFF);
+			byte b3 = (byte) ((value >> 8) & 0xFF);
+			byte b4 = (byte) (value & 0xFF);
+			// FIXME: faster API would be nice
+			return blob.replace(offset, 4, new byte[] { b1, b2, b3, b4 });
+		}
+
+		@Override
+		public Integer read(Blob blob, int offset) {
+			return read_i32(blob,offset);
+		}
+
+		@Override
+		public Content.Blob write(Integer i, Blob blob, int offset) {
+			return write_i32(i, blob, offset);
+		}
+	}
 }
