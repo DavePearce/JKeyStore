@@ -42,7 +42,7 @@ public class PrimitiveLayouts {
 		}
 
 		@Override
-		public int size() {
+		public int sizeOf() {
 			return 4;
 		}
 

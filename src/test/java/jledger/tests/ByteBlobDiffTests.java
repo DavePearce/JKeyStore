@@ -417,7 +417,7 @@ public class ByteBlobDiffTests {
 		final int n = replacements.length;
 		for (String after : permute(before, replacements)) {
 			// Construct corresponding diff
-			ByteBlob.Diff diff = ByteBlob.diff(before.getBytes(), after.getBytes());
+			Content.Diff diff = ByteBlob.diff(before.getBytes(), after.getBytes());
 			// Check number of replacements matches
 			assertTrue(diff.count() <= n);
 			// Check replacement matches

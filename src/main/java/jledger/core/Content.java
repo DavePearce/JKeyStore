@@ -89,11 +89,12 @@ public class Content {
 	 */
 	public interface StaticLayout<T> extends Layout<T> {
 		/**
-		 * Return the size of this layout in bytes.
+		 * Return the size of this layout in bytes. Since this is a static layout, there
+		 * is no need for any parameters!
 		 *
 		 * @return
 		 */
-		public int size();
+		public int sizeOf();
 	}
 
 	/**
