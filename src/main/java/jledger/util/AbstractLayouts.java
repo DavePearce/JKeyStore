@@ -2,9 +2,6 @@ package jledger.util;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
-import jledger.core.Content.Constructor;
-import jledger.core.Content.Layout;
-import jledger.core.Content.Position;
 
 public class AbstractLayouts {
 
@@ -12,19 +9,19 @@ public class AbstractLayouts {
 	// Proxy
 	// ========================================================================
 
-	public static class Proxy<T> implements Content.Proxy<T> {
-		protected final Content.Layout<T> layout;
+	public static class Proxy<S extends Content.Proxy,T extends Content.Layout<S>> implements Content.Proxy {
+		protected final T layout;
 		protected final Content.Blob blob;
 		protected final int offset;
 
-		public Proxy(Content.Layout<T> layout) {
+		public Proxy(T layout) {
 			this.layout = layout;
 			this.blob = layout.initialise(ByteBlob.EMPTY, 0);
 			this.offset = 0;
 
 		}
 
-		public Proxy(Content.Layout<T> layout, Content.Blob blob, int offset) {
+		public Proxy(T layout, Content.Blob blob, int offset) {
 			this.layout = layout;
 			this.blob = blob;
 			this.offset = offset;
@@ -41,14 +38,9 @@ public class AbstractLayouts {
 		}
 
 		@Override
-		public Layout<T> getLayout() {
-			return layout;
-		}
-
-		@Override
 		public byte[] toBytes() {
-			int size = layout.size(blob, offset);
-			return blob.read(offset, size);
+			int size = layout.sizeOf(blob, offset);
+			return blob.readBytes(offset, size);
 		}
 	}
 //

@@ -68,7 +68,7 @@ public class BuildServer {
 		}
 
 		public Entry get(int i) {
-			return LAYOUT.read(Entry.class, POSITION(0, i + 1), blob, offset);
+			return LAYOUT.readBytes(Entry.class, POSITION(0, i + 1), blob, offset);
 		}
 
 		@Override

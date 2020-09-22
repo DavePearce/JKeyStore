@@ -41,9 +41,9 @@ public class ByteBlobDiffTests {
 		byte[] bs1 = "Hello World".getBytes();
 		ByteBlob v1 = new ByteBlob(bs1);
 		assertEquals(v1.size(),11);
-		assertEquals(v1.read(),bs1);
+		assertEquals(v1.readAll(),bs1);
 		for (int i = 0; i != bs1.length; ++i) {
-			assertEquals(v1.read(i), bs1[i]);
+			assertEquals(v1.readByte(i), bs1[i]);
 		}
 	}
 
@@ -53,17 +53,17 @@ public class ByteBlobDiffTests {
 		Content.Blob v = new ByteBlob(bs1);
 		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of writes
-		vs[0] = v.write(0, (byte) 'H');
-		vs[1] = v.write(1, (byte) 'E');
-		vs[2] = v.write(2, (byte) 'L');
-		vs[3] = v.write(3, (byte) 'L');
-		vs[4] = v.write(4, (byte) 'O');
-		vs[5] = v.write(5, (byte) '_');
-		vs[6] = v.write(6, (byte) 'W');
-		vs[7] = v.write(7, (byte) 'O');
-		vs[8] = v.write(8, (byte) 'R');
-		vs[9] = v.write(9, (byte) 'L');
-		vs[10] = v.write(10, (byte) 'D');
+		vs[0] = v.writeByte(0, (byte) 'H');
+		vs[1] = v.writeByte(1, (byte) 'E');
+		vs[2] = v.writeByte(2, (byte) 'L');
+		vs[3] = v.writeByte(3, (byte) 'L');
+		vs[4] = v.writeByte(4, (byte) 'O');
+		vs[5] = v.writeByte(5, (byte) '_');
+		vs[6] = v.writeByte(6, (byte) 'W');
+		vs[7] = v.writeByte(7, (byte) 'O');
+		vs[8] = v.writeByte(8, (byte) 'R');
+		vs[9] = v.writeByte(9, (byte) 'L');
+		vs[10] = v.writeByte(10, (byte) 'D');
 		// Check sizes invariant
 		assertEquals(v.size(),vs[0].size());
 		assertEquals(v.size(),vs[1].size());
@@ -77,17 +77,17 @@ public class ByteBlobDiffTests {
 		assertEquals(v.size(),vs[9].size());
 		assertEquals(v.size(),vs[10].size());
 		// Check character change as expected
-		assertArrayEquals("Hello world".getBytes(),vs[0].read());
-		assertArrayEquals("hEllo world".getBytes(),vs[1].read());
-		assertArrayEquals("heLlo world".getBytes(),vs[2].read());
-		assertArrayEquals("helLo world".getBytes(),vs[3].read());
-		assertArrayEquals("hellO world".getBytes(),vs[4].read());
-		assertArrayEquals("hello_world".getBytes(),vs[5].read());
-		assertArrayEquals("hello World".getBytes(),vs[6].read());
-		assertArrayEquals("hello wOrld".getBytes(),vs[7].read());
-		assertArrayEquals("hello woRld".getBytes(),vs[8].read());
-		assertArrayEquals("hello worLd".getBytes(),vs[9].read());
-		assertArrayEquals("hello worlD".getBytes(),vs[10].read());
+		assertArrayEquals("Hello world".getBytes(),vs[0].readAll());
+		assertArrayEquals("hEllo world".getBytes(),vs[1].readAll());
+		assertArrayEquals("heLlo world".getBytes(),vs[2].readAll());
+		assertArrayEquals("helLo world".getBytes(),vs[3].readAll());
+		assertArrayEquals("hellO world".getBytes(),vs[4].readAll());
+		assertArrayEquals("hello_world".getBytes(),vs[5].readAll());
+		assertArrayEquals("hello World".getBytes(),vs[6].readAll());
+		assertArrayEquals("hello wOrld".getBytes(),vs[7].readAll());
+		assertArrayEquals("hello woRld".getBytes(),vs[8].readAll());
+		assertArrayEquals("hello worLd".getBytes(),vs[9].readAll());
+		assertArrayEquals("hello worlD".getBytes(),vs[10].readAll());
 	}
 
 	@Test
@@ -96,17 +96,17 @@ public class ByteBlobDiffTests {
 		Content.Blob v = new ByteBlob(bs1);
 		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of replacements
-		vs[0] = v.replace(0, 1, "H".getBytes());
-		vs[1] = v.replace(1, 1, "E".getBytes());
-		vs[2] = v.replace(2, 1, "L".getBytes());
-		vs[3] = v.replace(3, 1, "L".getBytes());
-		vs[4] = v.replace(4, 1, "O".getBytes());
-		vs[5] = v.replace(5, 1, "_".getBytes());
-		vs[6] = v.replace(6, 1, "W".getBytes());
-		vs[7] = v.replace(7, 1, "O".getBytes());
-		vs[8] = v.replace(8, 1, "R".getBytes());
-		vs[9] = v.replace(9, 1, "L".getBytes());
-		vs[10] = v.replace(10, 1, "D".getBytes());
+		vs[0] = v.replaceBytes(0, 1, "H".getBytes());
+		vs[1] = v.replaceBytes(1, 1, "E".getBytes());
+		vs[2] = v.replaceBytes(2, 1, "L".getBytes());
+		vs[3] = v.replaceBytes(3, 1, "L".getBytes());
+		vs[4] = v.replaceBytes(4, 1, "O".getBytes());
+		vs[5] = v.replaceBytes(5, 1, "_".getBytes());
+		vs[6] = v.replaceBytes(6, 1, "W".getBytes());
+		vs[7] = v.replaceBytes(7, 1, "O".getBytes());
+		vs[8] = v.replaceBytes(8, 1, "R".getBytes());
+		vs[9] = v.replaceBytes(9, 1, "L".getBytes());
+		vs[10] = v.replaceBytes(10, 1, "D".getBytes());
 		// Check sizes invariant
 		assertEquals(v.size(),vs[0].size());
 		assertEquals(v.size(),vs[1].size());
@@ -120,17 +120,17 @@ public class ByteBlobDiffTests {
 		assertEquals(v.size(),vs[9].size());
 		assertEquals(v.size(),vs[10].size());
 		// Check character change as expected
-		assertArrayEquals("Hello world".getBytes(),vs[0].read());
-		assertArrayEquals("hEllo world".getBytes(),vs[1].read());
-		assertArrayEquals("heLlo world".getBytes(),vs[2].read());
-		assertArrayEquals("helLo world".getBytes(),vs[3].read());
-		assertArrayEquals("hellO world".getBytes(),vs[4].read());
-		assertArrayEquals("hello_world".getBytes(),vs[5].read());
-		assertArrayEquals("hello World".getBytes(),vs[6].read());
-		assertArrayEquals("hello wOrld".getBytes(),vs[7].read());
-		assertArrayEquals("hello woRld".getBytes(),vs[8].read());
-		assertArrayEquals("hello worLd".getBytes(),vs[9].read());
-		assertArrayEquals("hello worlD".getBytes(),vs[10].read());
+		assertArrayEquals("Hello world".getBytes(),vs[0].readAll());
+		assertArrayEquals("hEllo world".getBytes(),vs[1].readAll());
+		assertArrayEquals("heLlo world".getBytes(),vs[2].readAll());
+		assertArrayEquals("helLo world".getBytes(),vs[3].readAll());
+		assertArrayEquals("hellO world".getBytes(),vs[4].readAll());
+		assertArrayEquals("hello_world".getBytes(),vs[5].readAll());
+		assertArrayEquals("hello World".getBytes(),vs[6].readAll());
+		assertArrayEquals("hello wOrld".getBytes(),vs[7].readAll());
+		assertArrayEquals("hello woRld".getBytes(),vs[8].readAll());
+		assertArrayEquals("hello worLd".getBytes(),vs[9].readAll());
+		assertArrayEquals("hello worlD".getBytes(),vs[10].readAll());
 	}
 
 	@Test
@@ -139,17 +139,17 @@ public class ByteBlobDiffTests {
 		Content.Blob v = new ByteBlob(bs1);
 		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of replacements
-		vs[0] = v.replace(0, 1, "Hh".getBytes());
-		vs[1] = v.replace(1, 1, "Ee".getBytes());
-		vs[2] = v.replace(2, 1, "Ll".getBytes());
-		vs[3] = v.replace(3, 1, "Ll".getBytes());
-		vs[4] = v.replace(4, 1, "Oo".getBytes());
-		vs[5] = v.replace(5, 1, " _".getBytes());
-		vs[6] = v.replace(6, 1, "Ww".getBytes());
-		vs[7] = v.replace(7, 1, "Oo".getBytes());
-		vs[8] = v.replace(8, 1, "Rr".getBytes());
-		vs[9] = v.replace(9, 1, "Ll".getBytes());
-		vs[10] = v.replace(10, 1, "Dd".getBytes());
+		vs[0] = v.replaceBytes(0, 1, "Hh".getBytes());
+		vs[1] = v.replaceBytes(1, 1, "Ee".getBytes());
+		vs[2] = v.replaceBytes(2, 1, "Ll".getBytes());
+		vs[3] = v.replaceBytes(3, 1, "Ll".getBytes());
+		vs[4] = v.replaceBytes(4, 1, "Oo".getBytes());
+		vs[5] = v.replaceBytes(5, 1, " _".getBytes());
+		vs[6] = v.replaceBytes(6, 1, "Ww".getBytes());
+		vs[7] = v.replaceBytes(7, 1, "Oo".getBytes());
+		vs[8] = v.replaceBytes(8, 1, "Rr".getBytes());
+		vs[9] = v.replaceBytes(9, 1, "Ll".getBytes());
+		vs[10] = v.replaceBytes(10, 1, "Dd".getBytes());
 		// Check sizes invariant
 		assertEquals(v.size()+1,vs[0].size());
 		assertEquals(v.size()+1,vs[1].size());
@@ -163,17 +163,17 @@ public class ByteBlobDiffTests {
 		assertEquals(v.size()+1,vs[9].size());
 		assertEquals(v.size()+1,vs[10].size());
 		// Check character change as expected
-		assertArrayEquals("Hhello world".getBytes(),vs[0].read());
-		assertArrayEquals("hEello world".getBytes(),vs[1].read());
-		assertArrayEquals("heLllo world".getBytes(),vs[2].read());
-		assertArrayEquals("helLlo world".getBytes(),vs[3].read());
-		assertArrayEquals("hellOo world".getBytes(),vs[4].read());
-		assertArrayEquals("hello _world".getBytes(),vs[5].read());
-		assertArrayEquals("hello Wworld".getBytes(),vs[6].read());
-		assertArrayEquals("hello wOorld".getBytes(),vs[7].read());
-		assertArrayEquals("hello woRrld".getBytes(),vs[8].read());
-		assertArrayEquals("hello worLld".getBytes(),vs[9].read());
-		assertArrayEquals("hello worlDd".getBytes(),vs[10].read());
+		assertArrayEquals("Hhello world".getBytes(),vs[0].readAll());
+		assertArrayEquals("hEello world".getBytes(),vs[1].readAll());
+		assertArrayEquals("heLllo world".getBytes(),vs[2].readAll());
+		assertArrayEquals("helLlo world".getBytes(),vs[3].readAll());
+		assertArrayEquals("hellOo world".getBytes(),vs[4].readAll());
+		assertArrayEquals("hello _world".getBytes(),vs[5].readAll());
+		assertArrayEquals("hello Wworld".getBytes(),vs[6].readAll());
+		assertArrayEquals("hello wOorld".getBytes(),vs[7].readAll());
+		assertArrayEquals("hello woRrld".getBytes(),vs[8].readAll());
+		assertArrayEquals("hello worLld".getBytes(),vs[9].readAll());
+		assertArrayEquals("hello worlDd".getBytes(),vs[10].readAll());
 	}
 
 	@Test
@@ -182,17 +182,17 @@ public class ByteBlobDiffTests {
 		Content.Blob v = new ByteBlob(bs1);
 		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of replacements
-		vs[0] = v.replace(0, 1, "HhH".getBytes());
-		vs[1] = v.replace(1, 1, "EeE".getBytes());
-		vs[2] = v.replace(2, 1, "LlL".getBytes());
-		vs[3] = v.replace(3, 1, "LlL".getBytes());
-		vs[4] = v.replace(4, 1, "OoO".getBytes());
-		vs[5] = v.replace(5, 1, " _ ".getBytes());
-		vs[6] = v.replace(6, 1, "WwW".getBytes());
-		vs[7] = v.replace(7, 1, "OoO".getBytes());
-		vs[8] = v.replace(8, 1, "RrR".getBytes());
-		vs[9] = v.replace(9, 1, "LlL".getBytes());
-		vs[10] = v.replace(10, 1, "DdD".getBytes());
+		vs[0] = v.replaceBytes(0, 1, "HhH".getBytes());
+		vs[1] = v.replaceBytes(1, 1, "EeE".getBytes());
+		vs[2] = v.replaceBytes(2, 1, "LlL".getBytes());
+		vs[3] = v.replaceBytes(3, 1, "LlL".getBytes());
+		vs[4] = v.replaceBytes(4, 1, "OoO".getBytes());
+		vs[5] = v.replaceBytes(5, 1, " _ ".getBytes());
+		vs[6] = v.replaceBytes(6, 1, "WwW".getBytes());
+		vs[7] = v.replaceBytes(7, 1, "OoO".getBytes());
+		vs[8] = v.replaceBytes(8, 1, "RrR".getBytes());
+		vs[9] = v.replaceBytes(9, 1, "LlL".getBytes());
+		vs[10] = v.replaceBytes(10, 1, "DdD".getBytes());
 		// Check sizes invariant
 		assertEquals(v.size()+2,vs[0].size());
 		assertEquals(v.size()+2,vs[1].size());
@@ -206,17 +206,17 @@ public class ByteBlobDiffTests {
 		assertEquals(v.size()+2,vs[9].size());
 		assertEquals(v.size()+2,vs[10].size());
 		// Check character change as expected
-		assertArrayEquals("HhHello world".getBytes(),vs[0].read());
-		assertArrayEquals("hEeEllo world".getBytes(),vs[1].read());
-		assertArrayEquals("heLlLlo world".getBytes(),vs[2].read());
-		assertArrayEquals("helLlLo world".getBytes(),vs[3].read());
-		assertArrayEquals("hellOoO world".getBytes(),vs[4].read());
-		assertArrayEquals("hello _ world".getBytes(),vs[5].read());
-		assertArrayEquals("hello WwWorld".getBytes(),vs[6].read());
-		assertArrayEquals("hello wOoOrld".getBytes(),vs[7].read());
-		assertArrayEquals("hello woRrRld".getBytes(),vs[8].read());
-		assertArrayEquals("hello worLlLd".getBytes(),vs[9].read());
-		assertArrayEquals("hello worlDdD".getBytes(),vs[10].read());
+		assertArrayEquals("HhHello world".getBytes(),vs[0].readAll());
+		assertArrayEquals("hEeEllo world".getBytes(),vs[1].readAll());
+		assertArrayEquals("heLlLlo world".getBytes(),vs[2].readAll());
+		assertArrayEquals("helLlLo world".getBytes(),vs[3].readAll());
+		assertArrayEquals("hellOoO world".getBytes(),vs[4].readAll());
+		assertArrayEquals("hello _ world".getBytes(),vs[5].readAll());
+		assertArrayEquals("hello WwWorld".getBytes(),vs[6].readAll());
+		assertArrayEquals("hello wOoOrld".getBytes(),vs[7].readAll());
+		assertArrayEquals("hello woRrRld".getBytes(),vs[8].readAll());
+		assertArrayEquals("hello worLlLd".getBytes(),vs[9].readAll());
+		assertArrayEquals("hello worlDdD".getBytes(),vs[10].readAll());
 	}
 
 	@Test
@@ -225,16 +225,16 @@ public class ByteBlobDiffTests {
 		Content.Blob v = new ByteBlob(bs1);
 		Content.Blob[] vs = new Content.Blob[10];
 		// A bunch of replacements
-		vs[0] = v.replace(0, 2, "H".getBytes());
-		vs[1] = v.replace(1, 2, "E".getBytes());
-		vs[2] = v.replace(2, 2, "L".getBytes());
-		vs[3] = v.replace(3, 2, "L".getBytes());
-		vs[4] = v.replace(4, 2, "O".getBytes());
-		vs[5] = v.replace(5, 2, "_".getBytes());
-		vs[6] = v.replace(6, 2, "W".getBytes());
-		vs[7] = v.replace(7, 2, "O".getBytes());
-		vs[8] = v.replace(8, 2, "R".getBytes());
-		vs[9] = v.replace(9, 2, "L".getBytes());
+		vs[0] = v.replaceBytes(0, 2, "H".getBytes());
+		vs[1] = v.replaceBytes(1, 2, "E".getBytes());
+		vs[2] = v.replaceBytes(2, 2, "L".getBytes());
+		vs[3] = v.replaceBytes(3, 2, "L".getBytes());
+		vs[4] = v.replaceBytes(4, 2, "O".getBytes());
+		vs[5] = v.replaceBytes(5, 2, "_".getBytes());
+		vs[6] = v.replaceBytes(6, 2, "W".getBytes());
+		vs[7] = v.replaceBytes(7, 2, "O".getBytes());
+		vs[8] = v.replaceBytes(8, 2, "R".getBytes());
+		vs[9] = v.replaceBytes(9, 2, "L".getBytes());
 		// Check sizes invariant
 		assertEquals(v.size()-1,vs[0].size());
 		assertEquals(v.size()-1,vs[1].size());
@@ -247,16 +247,16 @@ public class ByteBlobDiffTests {
 		assertEquals(v.size()-1,vs[8].size());
 		assertEquals(v.size()-1,vs[9].size());
 		// Check character change as expected
-		assertArrayEquals("Hllo world".getBytes(),vs[0].read());
-		assertArrayEquals("hElo world".getBytes(),vs[1].read());
-		assertArrayEquals("heLo world".getBytes(),vs[2].read());
-		assertArrayEquals("helL world".getBytes(),vs[3].read());
-		assertArrayEquals("hellOworld".getBytes(),vs[4].read());
-		assertArrayEquals("hello_orld".getBytes(),vs[5].read());
-		assertArrayEquals("hello Wrld".getBytes(),vs[6].read());
-		assertArrayEquals("hello wOld".getBytes(),vs[7].read());
-		assertArrayEquals("hello woRd".getBytes(),vs[8].read());
-		assertArrayEquals("hello worL".getBytes(),vs[9].read());
+		assertArrayEquals("Hllo world".getBytes(),vs[0].readAll());
+		assertArrayEquals("hElo world".getBytes(),vs[1].readAll());
+		assertArrayEquals("heLo world".getBytes(),vs[2].readAll());
+		assertArrayEquals("helL world".getBytes(),vs[3].readAll());
+		assertArrayEquals("hellOworld".getBytes(),vs[4].readAll());
+		assertArrayEquals("hello_orld".getBytes(),vs[5].readAll());
+		assertArrayEquals("hello Wrld".getBytes(),vs[6].readAll());
+		assertArrayEquals("hello wOld".getBytes(),vs[7].readAll());
+		assertArrayEquals("hello woRd".getBytes(),vs[8].readAll());
+		assertArrayEquals("hello worL".getBytes(),vs[9].readAll());
 	}
 
 	// ===================================================================
@@ -292,7 +292,7 @@ public class ByteBlobDiffTests {
 		}
 		// Sanity check mutants
 		for (Content.Blob b : mutants) {
-			byte[] bs = b.read();
+			byte[] bs = b.readAll();
 			assertEquals(bs.length, source.length);
 			int count = 0;
 			for (int i = 0; i != bs.length; ++i) {
@@ -310,9 +310,9 @@ public class ByteBlobDiffTests {
 		for(int i=0;i!=blobs.length;++i) {
 			Content.Blob ith = blobs[i];
 			for(int j=0;j!=target.length;++j) {
-				byte b = ith.read(j);
+				byte b = ith.readByte(j);
 				if(b != target[j]) {
-					tmp.add(ith.write(j, target[j]));
+					tmp.add(ith.writeByte(j, target[j]));
 				}
 			}
 		}
@@ -421,7 +421,7 @@ public class ByteBlobDiffTests {
 			// Check number of replacements matches
 			assertTrue(diff.count() <= n);
 			// Check replacement matches
-			assertEquals(after, new String(diff.read()));
+			assertEquals(after, new String(diff.readAll()));
 		}
 	}
 

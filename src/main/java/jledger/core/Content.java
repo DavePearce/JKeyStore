@@ -8,7 +8,7 @@ public class Content {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Proxy<T> {
+	public interface Proxy {
 		/**
 		 * Get the offset of this proxy object within the blob containing it.
 		 *
@@ -23,55 +23,10 @@ public class Content {
 		public Content.Blob getBlob();
 
 		/**
-		 * Get the underlying layout describing this proxy object.
-		 *
-		 * @return
-		 */
-		public Content.Layout<T> getLayout();
-
-		/**
 		 * Convert proxy into a byte sequence.
 		 * @return
 		 */
 		public byte[] toBytes();
-	}
-
-	/**
-	 * Identifies a specific position within a given layout. The following
-	 * illustrates:
-	 *
-	 * <pre>
-	 *   |00|01|02|03|04|05|06|07|08|
-	 *   +--------+--------+--------+
-	 * 0 |        |        |        |
-	 *   +-----+--+-----+--+-----+--+
-	 * 1 |     |  |     |  |     |  |
-	 *   +-----+--+-----+--+-----+--+
-	 * 2 |00 ff|01|00 00|00|af 00|00|
-	 * </pre>
-	 *
-	 * This layout consists of a repeating sequence of two fields. The first field
-	 * occupies two bytes, whilst the second occupies one. The position held by
-	 * value <code>01</code> is <code>(0,1)</code>, whilst that for the value
-	 * <code>af 00</code> is <code>(2,0)</code>.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Position {
-		/**
-		 * The index point at this level of recursion.
-		 *
-		 * @return
-		 */
-		public int index();
-
-		/**
-		 * Return the subposition contained within this position.
-		 *
-		 * @return
-		 */
-		public Position child();
 	}
 
 	/**
@@ -84,18 +39,18 @@ public class Content {
 	public interface Layout<T> {
 
 		/**
-		 * Return the size (in bytes) of this layouts instantiation in a given blob.
+		 * Return the size (in bytes) of this layout instantiation in a given blob.
 		 *
 		 * @param blob   The blob in which this layout is instantiated.
 		 * @param offset The starting offset where this layout is instantiated.
 		 * @return
 		 */
-		public int size(Content.Blob blob, int offset);
+		public int sizeOf(Content.Blob blob, int offset);
 
 		/**
 		 * Initialise this layout at a given position within a blob. This will
-		 * initialise appropriate default values for fields. For example, an integer may
-		 * default to zero, whilst an array may default to being empty, etc.
+		 * initialise appropriate values for fields. For example, an integer may default
+		 * to zero, whilst an array may default to being empty, etc.
 		 *
 		 * @return
 		 */
@@ -175,7 +130,7 @@ public class Content {
 		 *
 		 * @return
 		 */
-		public byte[] read();
+		public byte[] readAll();
 
 		/**
 		 * Read a given byte from a given position in the blob. The index must be
@@ -184,7 +139,25 @@ public class Content {
 		 * @param index
 		 * @return
 		 */
-		public byte read(int index);
+		public byte readByte(int index);
+
+		/**
+		 * Read a 16-bit signed integer starting at a given position in the blob
+		 * assuming big endian orientation. All indices must be entirely within bounds.
+		 *
+		 * @param index
+		 * @return
+		 */
+		public short readShort(int index);
+
+		/**
+		 * Read a 32-bit signed integer starting at a given position in the blob
+		 * assuming big endian orientation. All indices must be entirely within bounds.
+		 *
+		 * @param index
+		 * @return
+		 */
+		public int readInt(int index);
 
 		/**
 		 * Read a given sequence of bytes from a given position in the blob. The entire
@@ -194,7 +167,7 @@ public class Content {
 		 * @param length
 		 * @return
 		 */
-		public byte[] read(int index, int length);
+		public byte[] readBytes(int index, int length);
 
 		/**
 		 * Read a given sequence of bytes from a given position in the blob into a
@@ -206,7 +179,7 @@ public class Content {
 		 * @param destStart starting position within destination
 		 * @return
 		 */
-		public void read(int index, int length, byte[] dest, int destStart);
+		public void readBytes(int index, int length, byte[] dest, int destStart);
 
 		/**
 		 * Write a given byte to a given position within this value. The index does not
@@ -217,7 +190,42 @@ public class Content {
 		 * @param b     data byte to written
 		 * @return
 		 */
-		public Diff write(int index, byte b);
+		public Diff writeByte(int index, byte b);
+
+		/**
+		 * Write a given 16-bit signed integer byte to a given position within this blob
+		 * assuming a big endian orientation. The index does not need to be in bounds
+		 * since blobs are elastic. Thus, writing beyond bounds increases the size of
+		 * the blob accordingly.
+		 *
+		 * @param index Position to overwrite
+		 * @param b     data byte to written
+		 * @return
+		 */
+		public Diff writeShort(int index, short i16);
+
+		/**
+		 * Write a given 32-bit signed integer byte to a given position within this blob
+		 * assuming a big endian orientation. The index does not need to be in bounds
+		 * since blobs are elastic. Thus, writing beyond bounds increases the size of
+		 * the blob accordingly.
+		 *
+		 * @param index Position to overwrite
+		 * @param b     data byte to written
+		 * @return
+		 */
+		public Diff writeInt(int index, int i32);
+
+		/**
+		 * Replace a given section of this value with a new sequence of bytes. The index
+		 * does not need to be in bounds since blobs are elastic. Thus, writing beyond
+		 * bounds increases the size of the blob accordingly.
+		 *
+		 * @param index Position to overwrite
+		 * @param b     data byte to written
+		 * @return
+		 */
+		public Diff writeBytes(int index, byte... bytes);
 
 		/**
 		 * Replace a given section of this value with a new sequence of bytes. The new
@@ -230,7 +238,53 @@ public class Content {
 		 * @param b      data byte to written
 		 * @return
 		 */
-		public Diff replace(int index, int length, byte... bytes);
+		public Diff replaceBytes(int index, int length, byte... bytes);
+
+		/**
+		 * Insert a given byte to a given position within this value. The index does not
+		 * need to be in bounds since blobs are elastic. Thus, inserting beyond bounds
+		 * increases the size of the blob accordingly.
+		 *
+		 * @param index Position to insert before
+		 * @param b     data byte to written
+		 * @return
+		 */
+		public Diff insertByte(int index, byte b);
+
+		/**
+		 * Insert a given 16-bit signed integer byte to a given position within this blob
+		 * assuming a big endian orientation. The index does not need to be in bounds
+		 * since blobs are elastic. Thus, insert beyond bounds increases the size of
+		 * the blob accordingly.
+		 *
+		 * @param index Position to insert before
+		 * @param b     data byte to written
+		 * @return
+		 */
+		public Diff insertShort(int index, short i16);
+
+		/**
+		 * Insert a given 32-bit signed integer byte to a given position within this blob
+		 * assuming a big endian orientation. The index does not need to be in bounds
+		 * since blobs are elastic. Thus, insert beyond bounds increases the size of
+		 * the blob accordingly.
+		 *
+		 * @param index Position to insert before
+		 * @param b     data byte to written
+		 * @return
+		 */
+		public Diff insertInt(int index, int i32);
+
+		/**
+		 * Insert a given section of this value with a new sequence of bytes. The index
+		 * does not need to be in bounds since blobs are elastic. Thus, insert beyond
+		 * bounds increases the size of the blob accordingly.
+		 *
+		 * @param index Position to insert before
+		 * @param b     data byte to written
+		 * @return
+		 */
+		public Diff insertBytes(int index, byte... bytes);
 	}
 
 	/**
