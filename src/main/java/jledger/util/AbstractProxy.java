@@ -78,33 +78,4 @@ public class AbstractProxy<S extends Content.Proxy, T extends Content.Layout<S>>
 		int size = layout.sizeOf(blob, offset);
 		return blob.readBytes(offset, size);
 	}
-
-	public static abstract class Bridge<T extends Content.Proxy> implements Content.Proxy {
-		protected final T target;
-
-		public Bridge(T target) {
-			this.target = target;
-		}
-
-		@Override
-		public int getOffset() {
-			return target.getOffset();
-		}
-
-		@Override
-		public Blob getBlob() {
-			return target.getBlob();
-		}
-
-		@Override
-		public int sizeOf() {
-			return target.getOffset();
-		}
-
-		@Override
-		public byte[] toBytes() {
-			return target.toBytes();
-		}
-
-	}
 }
