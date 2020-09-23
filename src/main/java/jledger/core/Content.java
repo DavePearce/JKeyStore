@@ -23,6 +23,20 @@ public class Content {
 		public Content.Blob getBlob();
 
 		/**
+		 * Get the layout represented by this proxy.
+		 *
+		 * @return
+		 */
+		public Content.Layout<?> getLayout();
+
+		/**
+		 * Get the size of the underlying item in bytes.
+		 *
+		 * @return
+		 */
+		public int sizeOf();
+
+		/**
 		 * Convert proxy into a byte sequence.
 		 * @return
 		 */
@@ -57,26 +71,40 @@ public class Content {
 		public Content.Blob initialise(Content.Blob blob, int offset);
 
 		/**
-		 * Read a value from a given position within an instantiation of this layout in
-		 * a blob.
+		 * Read the value representing an instantiation of this layout at a given
+		 * position in a blob.
 		 *
-		 * @param blob     The blob containing the instantiation of this layout.
-		 * @param offset   The offset within the blob where the instantiation of this
-		 *                 layout begins.
+		 * @param blob   The blob containing the instantiation of this layout.
+		 * @param offset The offset within the blob where the instantiation of this
+		 *               layout begins.
 		 * @return
 		 */
 		public T read(Content.Blob blob, int offset);
 
 		/**
-		 * Write a proxy object to a given position within this layout.
+		 * Update the value representing an instantiation of this layout at a given
+		 * position in a blob. Observe that this <i>overwrites</i> the existing value
+		 * and does not otherwise affect the blob's size.
 		 *
-		 * @param proxy
-		 * @param position
-		 * @param blob
-		 * @param offset
+		 * @param proxy  The value to be written.
+		 * @param blob   The blob containing the instantiation of this layout.
+		 * @param offset The offset within the blob where the instantiation of this
+		 *               layout begins.
 		 * @return
 		 */
 		public Content.Blob write(T proxy, Content.Blob blob, int offset);
+
+		/**
+		 * Insert a value representing an instantiation of this layout at a given
+		 * position in a blob. Observe that this necessarily increases the blob's size.
+		 *
+		 * @param proxy  The value to be written.
+		 * @param blob   The blob containing the instantiation of this layout.
+		 * @param offset The offset within the blob where the instantiation of this
+		 *               layout begins.
+		 * @return
+		 */
+		public Content.Blob insert(T proxy, Content.Blob blob, int offset);
 	}
 
 	/**

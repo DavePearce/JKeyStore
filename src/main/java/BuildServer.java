@@ -5,7 +5,10 @@ import java.nio.file.attribute.BasicFileAttributes;
 import jledger.core.Content;
 import jledger.core.Content.Layout;
 import jledger.util.AbstractLayouts;
-import jledger.util.ArrayLayouts;
+import jledger.util.AbstractProxy;
+import jledger.util.Layouts;
+import jledger.util.Layouts.Array;
+
 import static jledger.util.AbstractLayouts.*;
 import jledger.util.NonSequentialLedger;
 import jledger.util.PrimitiveLayouts;
@@ -45,9 +48,10 @@ public class BuildServer {
 		return r;
 	}
 
-	private static final class Directory extends AbstractLayouts.Proxy<Directory> {
-		public static final Content.Layout<Directory> LAYOUT = RecordLayouts.RECORD(Directory::new,
-				ArrayLayouts.DYNAMIC_ARRAY(Entry.LAYOUT));
+	private static final class Directory extends AbstractProxy<Array<Integer>, Content.Layout<Array<Integer>>> {
+		public static final Content.Layout<Array<Integer>> LAYOUT = Layouts.ARRAY(Entry.LAYOUT);
+
+		private final Array<Entry> entries;
 
 		public Directory() {
 			super(LAYOUT);
@@ -55,20 +59,21 @@ public class BuildServer {
 
 		public Directory(Content.Blob blob, int offset) {
 			super(LAYOUT, blob, offset);
+			entries = LAYOUT.read(blob, offset);
 		}
 
 		public int size() {
-			return LAYOUT.read_i32(POSITION(0, 0), blob, offset);
+			return entries.length();
 		}
 
 		public Directory add(int value) {
-			Entry e = new Entry().set(value);
-			Content.Blob nblob = LAYOUT.append(e, POSITION(0), blob, offset);
+			Entry e = new Entry(value);
+			Content.Blob nblob = entries.append(e);
 			return new Directory(nblob, offset);
 		}
 
 		public Entry get(int i) {
-			return LAYOUT.readBytes(Entry.class, POSITION(0, i + 1), blob, offset);
+			return entries.get(i);
 		}
 
 		@Override
@@ -84,11 +89,13 @@ public class BuildServer {
 		}
 	}
 
-	private static final class Entry extends AbstractLayouts.Proxy<Entry> {
-		public static final Content.Layout<Entry> LAYOUT = RecordLayouts.RECORD(Entry::new, PrimitiveLayouts.INT32);
+	private static final class Entry extends AbstractProxy<Integer, Content.Layout<Integer>> {
+		public static final Content.Layout<Integer> LAYOUT = Layouts.INT32;
+		private final int value;
 
-		public Entry() {
+		public Entry(Integer i) {
 			super(LAYOUT);
+			this.value = i;
 		}
 
 		public Entry(Content.Blob blob, int offset) {
@@ -96,7 +103,7 @@ public class BuildServer {
 		}
 
 		public Entry set(int value) {
-			return new Entry(LAYOUT.write_i32(value, POSITION(0), blob, value), offset);
+			return new Entry(Layouts.INT32.write(offset, blob, value), offset);
 		}
 	}
 

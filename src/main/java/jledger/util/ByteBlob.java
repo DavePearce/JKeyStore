@@ -305,59 +305,59 @@ abstract class AbstractBlob implements Content.Blob {
 	}
 
 	@Override
-	public Diff writeShort(int index, short value) {
+	public Diff writeShort(int offset, short value) {
 		// Convert value into bytes
 		byte b1 = (byte) ((value >> 8) & 0xFF);
 		byte b2 = (byte) (value & 0xFF);
-		return new Diff(this, new Replacement(index, 1, b1, b2));
+		return new Diff(this, new Replacement(offset, 2, b1, b2));
 	}
 
 	@Override
-	public Diff writeInt(int index, int value) {
+	public Diff writeInt(int offset, int value) {
 		// Convert value into bytes
 		byte b1 = (byte) ((value >> 24) & 0xFF);
 		byte b2 = (byte) ((value >> 16) & 0xFF);
 		byte b3 = (byte) ((value >> 8) & 0xFF);
 		byte b4 = (byte) (value & 0xFF);
-		return new Diff(this, new Replacement(index, 1, b1, b2, b3, b4));
+		return new Diff(this, new Replacement(offset, 4, b1, b2, b3, b4));
 	}
 
 	@Override
-	public Diff writeBytes(int index, byte... bytes) {
-		return new Diff(this, new Replacement(index, bytes.length, bytes));
+	public Diff writeBytes(int offset, byte... bytes) {
+		return new Diff(this, new Replacement(offset, bytes.length, bytes));
 	}
 
 	@Override
-	public Diff replaceBytes(int index, int length, byte... bytes) {
-		return new Diff(this, new Replacement(index, length, bytes));
+	public Diff replaceBytes(int offset, int length, byte... bytes) {
+		return new Diff(this, new Replacement(offset, length, bytes));
 	}
 
 	@Override
-	public Diff insertByte(int index, byte b) {
-		return new Diff(this, new Replacement(index, 0, b));
+	public Diff insertByte(int offset, byte b) {
+		return new Diff(this, new Replacement(offset, 0, b));
 	}
 
 	@Override
-	public Diff insertShort(int index, short value) {
+	public Diff insertShort(int offset, short value) {
 		// Convert value into bytes
 		byte b1 = (byte) ((value >> 8) & 0xFF);
 		byte b2 = (byte) (value & 0xFF);
-		return new Diff(this, new Replacement(index, 0, b1, b2));
+		return new Diff(this, new Replacement(offset, 0, b1, b2));
 	}
 
 	@Override
-	public Diff insertInt(int index, int value) {
+	public Diff insertInt(int offset, int value) {
 		// Convert value into bytes
 		byte b1 = (byte) ((value >> 24) & 0xFF);
 		byte b2 = (byte) ((value >> 16) & 0xFF);
 		byte b3 = (byte) ((value >> 8) & 0xFF);
 		byte b4 = (byte) (value & 0xFF);
-		return new Diff(this, new Replacement(index, 0, b1, b2, b3, b4));
+		return new Diff(this, new Replacement(offset, 0, b1, b2, b3, b4));
 	}
 
 	@Override
-	public Diff insertBytes(int index, byte... bytes) {
-		return new Diff(this, new Replacement(index, 0, bytes));
+	public Diff insertBytes(int offset, byte... bytes) {
+		return new Diff(this, new Replacement(offset, 0, bytes));
 	}
 }
 
