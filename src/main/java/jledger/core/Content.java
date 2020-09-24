@@ -133,8 +133,8 @@ public class Content {
 	 *
 	 * @param <T>
 	 */
-	public interface Constructor<T> {
-		public T read(Content.Blob blob, int offset);
+	public interface Constructor<L,T> {
+		public T apply(L layout, Content.Blob blob, int offset);
 	}
 
 	/**

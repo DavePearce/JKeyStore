@@ -4,15 +4,11 @@ import java.nio.file.attribute.BasicFileAttributes;
 
 import jledger.core.Content;
 import jledger.core.Content.Layout;
-import jledger.util.AbstractLayouts;
+import jledger.layouts.Array;
+import jledger.layouts.Pair;
+import static jledger.layouts.Primitive.INT32;
 import jledger.util.AbstractProxy;
-import jledger.util.Layouts;
-import jledger.util.Layouts.Array;
-
-import static jledger.util.AbstractLayouts.*;
 import jledger.util.NonSequentialLedger;
-import jledger.util.PrimitiveLayouts;
-import jledger.util.RecordLayouts;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
@@ -27,7 +23,7 @@ public class BuildServer {
 	public void create(String name, byte[] contents) {
 		Directory d = ledger.get(ledger.versions() - 1);
 		// Write another one
-		ledger.put(d.add(name.hashCode()));
+		//ledger.put(d.add(name.hashCode()));
 	}
 
 	public void update(String name, byte[] contents) {
@@ -48,10 +44,20 @@ public class BuildServer {
 		return r;
 	}
 
-	private static final class Directory extends AbstractProxy<Array<Integer>, Content.Layout<Array<Integer>>> {
-		public static final Content.Layout<Array<Integer>> LAYOUT = Layouts.ARRAY(Entry.LAYOUT);
+	private static final class Directory extends Array.Proxy<Entry> {
+		/**
+		 * Define layout for directories.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static final class Layout extends Array.Layout<Entry, Directory> implements Content.Layout<Directory> {
+			public Layout(Content.Layout<Entry> child, Entry... values) {
+				super(child, values);
+			}
+		}
 
-		private final Array<Entry> entries;
+		public static final Content.Layout<Directory> LAYOUT = new Layout(Array.ARRAY(Entry.LAYOUT));
 
 		public Directory() {
 			super(LAYOUT);
@@ -59,51 +65,26 @@ public class BuildServer {
 
 		public Directory(Content.Blob blob, int offset) {
 			super(LAYOUT, blob, offset);
-			entries = LAYOUT.read(blob, offset);
-		}
-
-		public int size() {
-			return entries.length();
-		}
-
-		public Directory add(int value) {
-			Entry e = new Entry(value);
-			Content.Blob nblob = entries.append(e);
-			return new Directory(nblob, offset);
-		}
-
-		public Entry get(int i) {
-			return entries.get(i);
 		}
 
 		@Override
 		public String toString() {
 			String r = "{";
-			for (int i = 0; i != size(); ++i) {
-				if (i != 0) {
-					r += ",";
-				}
-				r += get(i);
-			}
+//			for (int i = 0; i != size(); ++i) {
+//				if (i != 0) {
+//					r += ",";
+//				}
+//				r += get(i);
+//			}
 			return r + "}";
 		}
 	}
 
-	private static final class Entry extends AbstractProxy<Integer, Content.Layout<Integer>> {
-		public static final Content.Layout<Integer> LAYOUT = Layouts.INT32;
-		private final int value;
+	private static final class Entry extends Pair.Proxy<Integer, Integer, Entry> {
+		public static final Content.Layout<Entry> LAYOUT = Pair.create(INT32, INT32, Entry::new);
 
-		public Entry(Integer i) {
-			super(LAYOUT);
-			this.value = i;
-		}
-
-		public Entry(Content.Blob blob, int offset) {
-			super(LAYOUT, blob, offset);
-		}
-
-		public Entry set(int value) {
-			return new Entry(Layouts.INT32.write(offset, blob, value), offset);
+		public Entry(Pair.Layout<Integer, Integer, Entry> layout, Content.Blob blob, int offset) {
+			super(layout, blob, offset);
 		}
 	}
 

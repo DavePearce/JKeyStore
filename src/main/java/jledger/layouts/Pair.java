@@ -2,6 +2,7 @@ package jledger.layouts;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
+import jledger.core.Content.Constructor;
 import jledger.util.AbstractLayout;
 import jledger.util.AbstractProxy;
 import jledger.util.ByteBlob;
@@ -9,10 +10,6 @@ import jledger.util.ByteBlob;
 import static jledger.layouts.Primitive.*;
 
 public class Pair {
-	public interface Constructor<L,T> {
-		public T apply(L layout, Content.Blob blob, int offset);
-	}
-
 	/**
 	 * Represents a layout which consists of a two fields. The following
 	 * illustrates:

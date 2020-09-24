@@ -2,34 +2,10 @@ package jledger.layouts;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
+import jledger.core.Content.Constructor;
 import jledger.util.AbstractProxy;
 
 public class Array {
-
-	/**
-	 * Represents a dynamic-size repeating sequence of a given layout. Since the
-	 * array has a unknown size, this is stored as an <code>int32</code>.
-	 *
-	 * @param n
-	 * @param child
-	 * @return
-	 */
-	public static <T> Content.Layout<Proxy<T>> ARRAY(Content.Layout<T> child, T... values) {
-		return new DynamicLayout<>(child, values);
-	}
-
-	/**
-	 * Represents a dynamic-size repeating sequence of a given layout. Since the
-	 * array has a unknown size, this is stored as an <code>int32</code>.
-	 *
-	 * @param n
-	 * @param child
-	 * @return
-	 */
-	public static <T> Content.Layout<Proxy<T>> ARRAY(Content.StaticLayout<T> child, T... values) {
-		return new StaticLayout<>(child, values);
-	}
-
 
 	/**
 	 * A proxy for an array of elements.
@@ -98,14 +74,14 @@ public class Array {
 	 *
 	 * @param <T>
 	 */
-	private static class DynamicProxy<T> extends AbstractProxy<Proxy<T>, DynamicLayout<T>>
+	private static class DynamicProxy<T, U extends Proxy<T>> extends AbstractProxy<U, Layout<T, U>>
 			implements Proxy<T> {
 
-		public DynamicProxy(DynamicLayout<T> layout) {
+		public DynamicProxy(Layout<T,U> layout) {
 			super(layout);
 		}
 
-		public DynamicProxy(DynamicLayout<T> layout, Content.Blob blob, int offset) {
+		public DynamicProxy(Layout<T,U> layout, Content.Blob blob, int offset) {
 			super(layout, blob, offset);
 		}
 
@@ -224,130 +200,18 @@ public class Array {
 	}
 
 	/**
-	 * A proxy for an array of dynamically-sized elements.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 */
-	private static class StaticProxy<T> extends AbstractProxy<Proxy<T>, StaticLayout<T>>
-			implements Proxy<T> {
-		public StaticProxy(StaticLayout<T> layout) {
-			super(layout);
-		}
-
-		public StaticProxy(StaticLayout<T> layout, Content.Blob blob, int offset) {
-			super(layout, blob, offset);
-		}
-		/**
-		 * Get the number of elements in the array.
-		 *
-		 * @return
-		 */
-		@Override
-		public int length() {
-			return blob.readInt(offset);
-		}
-		/**
-		 * Read a given index within this array proxy.
-		 *
-		 * @param index
-		 * @param value
-		 * @param blob
-		 * @param offset
-		 * @return
-		 */
-		@Override
-		public T get(int index) {
-			final Content.StaticLayout<T> child = layout.child;
-			//
-			if(index < 0 || index >= length()) {
-				throw new IllegalArgumentException();
-			} else {
-				int coffset = offset + 4 + (index * child.sizeOf(blob, index));
-				// Read out child
-				return child.read(blob, coffset);
-			}
-		}
-
-		/**
-		 * Update a given index within this array proxy.
-		 *
-		 * @param index
-		 * @param value
-		 * @param blob
-		 * @param offset
-		 * @return
-		 */
-		@Override
-		public Content.Blob set(int index, T value) {
-			final Content.StaticLayout<T> child = layout.child;
-			//
-			if (index < 0 || index >= length()) {
-				throw new IllegalArgumentException();
-			} else {
-				int coffset = offset + 4 + (index * child.sizeOf());
-				// Overwrite existing child
-				return child.write(value, blob, coffset);
-			}
-		}
-
-		@Override
-		public Content.Blob insert(int index, T value) {
-			final Content.StaticLayout<T> child = layout.child;
-			final int n = length();
-			//
-			if (index < 0 || index >= n) {
-				throw new IllegalArgumentException();
-			} else {
-				// Determine location of insert element
-				int coffset = offset + 4 + (index * child.sizeOf());
-				// Update length of array
-				Content.Blob b = blob.writeInt(offset, n + 1);
-				// Overwrite existing child
-				return child.insert(value, b, coffset);
-			}
-		}
-
-		@Override
-		public Content.Blob append(T value) {
-			final Content.StaticLayout<T> child = layout.child;
-			final int n = length();
-			// Determine location of insert element
-			int coffset = offset + 4 + (n * child.sizeOf());
-			// Update length of array
-			Content.Blob b = blob.writeInt(offset, n + 1);
-			// Overwrite existing child
-			return child.insert(value, b, coffset);
-		}
-
-		@Override
-		public String toString() {
-			String r = "[";
-			final int n = length();
-			for (int i = 0; i < n; ++i) {
-				if (i != 0) {
-					r += ",";
-				}
-				r += get(i);
-			}
-			return r + "]";
-		}
-	}
-
-	/**
 	 * An array of arbitrarily many dynamically-sized elements.
 	 *
 	 * @author David J. Pearce
 	 *
 	 * @param <T>
 	 */
-	private static class DynamicLayout<T> implements Content.Layout<Proxy<T>> {
+	public static abstract class Layout<T, U extends Proxy<T>> implements Content.Layout<U> {
 		protected final Content.Layout<T> child;
 		protected final T[] values;
 
 		@SafeVarargs
-		public DynamicLayout(Content.Layout<T> child, T... values) {
+		public Layout(Content.Layout<T> child, T... values) {
 			this.child = child;
 			this.values = values;
 		}
@@ -381,82 +245,18 @@ public class Array {
 		}
 
 		@Override
-		public Proxy<T> read(Blob blob, int offset) {
-			return new DynamicProxy<>(this, blob, offset);
-		}
+		public abstract U read(Blob blob, int offset);
 
 		@Override
-		public Blob write(Proxy<T> proxy, Blob blob, int offset) {
+		public Blob write(U proxy, Blob blob, int offset) {
 			byte[] bytes = proxy.toBytes();
 			return blob.replaceBytes(offset, sizeOf(blob, offset), bytes);
 		}
 
 		@Override
-		public Blob insert(Proxy<T> proxy, Blob blob, int offset) {
+		public Blob insert(U proxy, Blob blob, int offset) {
 			byte[] bytes = proxy.toBytes();
 			return blob.replaceBytes(offset, 0, bytes);
 		}
 	}
-
-	/**
-	 * An array of arbitrarily many statically-sized elements. Since all elements
-	 * have the same fixed size, calculating their offsets is relatively easy.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 */
-	private static class StaticLayout<T> implements Content.Layout<Proxy<T>> {
-		protected final Content.StaticLayout<T> child;
-		protected final T[] values;
-
-		@SafeVarargs
-		public StaticLayout(Content.StaticLayout<T> child, T... values) {
-			this.child = child;
-			this.values = values;
-		}
-
-		@Override
-		public Content.Blob initialise(Content.Blob blob, int offset) {
-			// FIXME: can we make this more efficient?
-			blob = blob.insertInt(offset, values.length);
-			//
-			offset = offset + 4;
-			//
-			for(int i=0;i!=values.length;++i) {
-				// FIXME: technically this is not correct because we could be overwriting some
-				// other initialised data, but it should work assuming that nothing beyond index
-				// has been initialised yet.
-				blob = child.write(values[i], blob, offset);
-				// Advance to next child
-				offset = offset + child.sizeOf();
-			}
-			//
-			return blob;
-		}
-
-		@Override
-		public int sizeOf(Content.Blob blob, int offset) {
-			int n = blob.readInt(offset);
-			return 4 + (child.sizeOf() * n);
-		}
-
-		@Override
-		public Proxy<T> read(Blob blob, int offset) {
-			return new StaticProxy<>(this, blob, offset);
-		}
-
-		@Override
-		public Blob write(Proxy<T> proxy, Blob blob, int offset) {
-			byte[] bytes = proxy.toBytes();
-			return blob.replaceBytes(offset, sizeOf(blob, offset), bytes);
-		}
-
-		@Override
-		public Blob insert(Proxy<T> proxy, Blob blob, int offset) {
-			byte[] bytes = proxy.toBytes();
-			return blob.replaceBytes(offset, 0, bytes);
-		}
-	}
-
 }
