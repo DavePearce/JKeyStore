@@ -3,6 +3,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 
 import jledger.core.Content;
+import jledger.core.Content.Blob;
 import jledger.core.Content.Layout;
 import jledger.layouts.Array;
 import jledger.layouts.Pair;
@@ -44,7 +45,7 @@ public class BuildServer {
 		return r;
 	}
 
-	private static final class Directory extends Array.Proxy<Entry> {
+	private static final class Directory extends Array.Proxy<Entry, Directory> {
 		/**
 		 * Define layout for directories.
 		 *
@@ -55,13 +56,14 @@ public class BuildServer {
 			public Layout(Content.Layout<Entry> child, Entry... values) {
 				super(child, values);
 			}
+
+			@Override
+			public Directory read(Blob blob, int offset) {
+				return new Directory(blob,offset);
+			}
 		}
 
-		public static final Content.Layout<Directory> LAYOUT = new Layout(Array.ARRAY(Entry.LAYOUT));
-
-		public Directory() {
-			super(LAYOUT);
-		}
+		public static final Layout LAYOUT = new Layout(Entry.LAYOUT);
 
 		public Directory(Content.Blob blob, int offset) {
 			super(LAYOUT, blob, offset);

@@ -8,81 +8,21 @@ import jledger.util.AbstractProxy;
 public class Array {
 
 	/**
-	 * A proxy for an array of elements.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 */
-	public interface Proxy<T> extends Content.Proxy {
-
-		/**
-		 * Get the number of elements in the array.
-		 * @return
-		 */
-		public int length();
-
-		/**
-		 * Read a given index within this array proxy.
-		 *
-		 * @param index
-		 * @param value
-		 * @param blob
-		 * @param offset
-		 * @return
-		 */
-		public T get(int index);
-
-		/**
-		 * Update a given index within this array proxy.
-		 *
-		 * @param index
-		 * @param value
-		 * @param blob
-		 * @param offset
-		 * @return
-		 */
-		public Content.Blob set(int index, T value);
-
-		/**
-		 * Insert a new value into this array, increasing its size by one.
-		 *
-		 * @param index The index to insert the new element before.
-		 * @param value
-		 * @return
-		 */
-		public Content.Blob insert(int index, T value);
-
-		/**
-		 *
-		 * Append a value onto the end of this array, increasing its size by one.
-		 *
-		 * @param value
-		 * @return
-		 */
-		public Content.Blob append(T value);
-	}
-
-	// =================================================================
-	// Helpers (Arrays)
-	// =================================================================
-
-	/**
 	 * A proxy for an array of dynamically-sized elements.
 	 *
 	 * @author David J. Pearce
 	 *
 	 * @param <T>
 	 */
-	private static class DynamicProxy<T, U extends Proxy<T>> extends AbstractProxy<U, Layout<T, U>>
-			implements Proxy<T> {
+	public static class Proxy<T, U extends Proxy<T, U>> implements Content.Proxy {
+		protected final Layout<T, U> layout;
+		protected final Content.Blob blob;
+		protected final int offset;
 
-		public DynamicProxy(Layout<T,U> layout) {
-			super(layout);
-		}
-
-		public DynamicProxy(Layout<T,U> layout, Content.Blob blob, int offset) {
-			super(layout, blob, offset);
+		public Proxy(Layout<T,U> layout, Content.Blob blob, int offset) {
+			this.layout = layout;
+			this.blob = blob;
+			this.offset = offset;
 		}
 
 		/**
@@ -90,10 +30,30 @@ public class Array {
 		 *
 		 * @return
 		 */
-		@Override
 		public int length() {
 			return blob.readInt(offset);
 		}
+
+		@Override
+		public Blob getBlob() {
+			return blob;
+		}
+
+		@Override
+		public int getOffset() {
+			return offset;
+		}
+
+		@Override
+		public Content.Layout<?> getLayout() {
+			return layout;
+		}
+
+		@Override
+		public int sizeOf() {
+			return layout.sizeOf(blob, offset);
+		}
+
 		/**
 		 * Read a given index within this array proxy.
 		 *
@@ -103,7 +63,6 @@ public class Array {
 		 * @param offset
 		 * @return
 		 */
-		@Override
 		public T get(int index) {
 			final Content.Layout<T> child = layout.child;
 			//
@@ -131,7 +90,6 @@ public class Array {
 		 * @param offset
 		 * @return
 		 */
-		@Override
 		public Content.Blob set(int index, T value) {
 			final Content.Layout<T> child = layout.child;
 			//
@@ -150,7 +108,6 @@ public class Array {
 			}
 		}
 
-		@Override
 		public Content.Blob insert(int index, T value) {
 			final Content.Layout<T> child = layout.child;
 			//
@@ -169,7 +126,6 @@ public class Array {
 			}
 		}
 
-		@Override
 		public Content.Blob append(T value) {
 			final int n = length();
 			final Content.Layout<T> child = layout.child;
@@ -183,6 +139,12 @@ public class Array {
 			}
 			// Overwrite existing child
 			return child.insert(value, blob, coffset);
+		}
+
+		@Override
+		public byte[] toBytes() {
+			int size = layout.sizeOf(blob, offset);
+			return blob.readBytes(offset, size);
 		}
 
 		@Override
@@ -206,7 +168,7 @@ public class Array {
 	 *
 	 * @param <T>
 	 */
-	public static abstract class Layout<T, U extends Proxy<T>> implements Content.Layout<U> {
+	public static abstract class Layout<T, U extends Proxy<T,U>> implements Content.Layout<U> {
 		protected final Content.Layout<T> child;
 		protected final T[] values;
 
