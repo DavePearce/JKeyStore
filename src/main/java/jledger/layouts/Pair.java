@@ -11,64 +11,6 @@ import static jledger.layouts.Primitive.*;
 
 public class Pair {
 	/**
-	 * Represents a layout which consists of a two fields. The following
-	 * illustrates:
-	 *
-	 * <pre>
-	 *   |00|01|02|03|04|05|06|07|08|
-	 *   +--------+--------+--------+
-	 * 0 |        |        |        |
-	 *   +-----+--+-----+--+-----+--+
-	 * 1 |     |  |     |  |     |  |
-	 *   +-----+--+-----+--+-----+--+
-	 * 2 |00 ff|01|00 00|00|af 00|00|
-	 * </pre>
-	 *
-	 * This layout consists of repeating sequence (level 0) of static layouts (level
-	 * 1). The static layout consists of a two byte field followed by a one byte
-	 * field.
-	 *
-	 * @param <S>
-	 * @param <T>
-	 * @param first  Layout for the first field.
-	 * @param second Layout for the second field.
-	 * @return
-	 */
-	public static <S, T, U extends Proxy<S, T, U>> Content.Layout<U> create(Content.Layout<S> first,
-			Content.Layout<T> second, Constructor<Layout<S, T, U>, U> constructor) {
-		return new DynamicLayout<>(first, second, constructor);
-	}
-
-	/**
-	 * Represents a static layout which consists of a two fields. The
-	 * following illustrates:
-	 *
-	 * <pre>
-	 *   |00|01|02|03|04|05|06|07|08|
-	 *   +--------+--------+--------+
-	 * 0 |        |        |        |
-	 *   +-----+--+-----+--+-----+--+
-	 * 1 |     |  |     |  |     |  |
-	 *   +-----+--+-----+--+-----+--+
-	 * 2 |00 ff|01|00 00|00|af 00|00|
-	 * </pre>
-	 *
-	 * This layout consists of repeating sequence (level 0) of static layouts (level
-	 * 1). The static layout consists of a two byte field followed by a one byte
-	 * field.
-	 *
-	 * @param <S>
-	 * @param <T>
-	 * @param first Static layout for the first field.
-	 * @param second Static layout for the second field.
-	 * @return
-	 */
-	public static <S, T, U extends Proxy<S, T, U>> Content.StaticLayout<U> create(Content.StaticLayout<S> first,
-			Content.StaticLayout<T> second, Constructor<Layout<S, T, U>, U> constructor) {
-		return new StaticLayout<>(first, second, constructor);
-	}
-
-	/**
 	 * Represents a pair of items in a given layout.
 	 *
 	 * @author David J. Pearce
@@ -103,45 +45,28 @@ public class Pair {
 		}
 	}
 
-	public abstract static class Layout<S, T, U extends Proxy<S, T, U>> extends AbstractLayout<U> {
-		protected abstract S getFirst(Content.Blob blob, int offset);
-
-		protected abstract T getSecond(Content.Blob blob, int offset);
-
-		protected abstract Content.Blob setFirst(S value, Content.Blob blob, int offset);
-
-		protected abstract Content.Blob setSecond(T value, Content.Blob blob, int offset);
-	}
-
-	private static class DynamicLayout<S, T, U extends Proxy<S, T, U>> extends Layout<S, T, U> {
+	public abstract static class Layout<S, T, U extends Proxy<S, T, U>> implements Content.Layout<U> {
 		protected final Content.Layout<S> first;
 		protected final Content.Layout<T> second;
-		protected final Constructor<Layout<S, T, U>, U> constructor;
 
-		public DynamicLayout(Content.Layout<S> first, Content.Layout<T> second,
-				Constructor<Layout<S, T, U>, U> constructor) {
+		public Layout(Content.Layout<S> first, Content.Layout<T> second) {
 			this.first = first;
 			this.second = second;
-			this.constructor = constructor;
 		}
 
-		@Override
 		public S getFirst(Content.Blob blob, int offset) {
 			return first.read(blob, offset);
 		}
 
-		@Override
 		public T getSecond(Content.Blob blob, int offset) {
 			int n = first.sizeOf(blob, offset);
 			return second.read(blob, offset + n);
 		}
 
-		@Override
 		public Content.Blob setFirst(S value, Content.Blob blob, int offset) {
 			return first.write(value, blob, offset);
 		}
 
-		@Override
 		public Content.Blob setSecond(T value, Content.Blob blob, int offset) {
 			int n = first.sizeOf(blob, offset);
 			return second.write(value, blob, offset);
@@ -164,78 +89,30 @@ public class Pair {
 		}
 
 		@Override
-		public U read(Blob blob, int offset) {
-			return constructor.apply(this, blob, offset);
-		}
-	}
-
-	private static class StaticLayout<S, T, U extends Proxy<S, T, U>> extends Layout<S, T, U>
-			implements Content.StaticLayout<U> {
-		protected final Content.StaticLayout<S> first;
-		protected final Content.StaticLayout<T> second;
-		protected final Constructor<Layout<S, T, U>, U> constructor;
-
-		public StaticLayout(Content.StaticLayout<S> first, Content.StaticLayout<T> second,
-				Constructor<Layout<S, T, U>, U> constructor) {
-			this.first = first;
-			this.second = second;
-			this.constructor = constructor;
+		public Blob write(U proxy, Blob blob, int offset) {
+			byte[] bytes = proxy.toBytes();
+			return blob.replaceBytes(offset, sizeOf(blob, offset), bytes);
 		}
 
 		@Override
-		public S getFirst(Content.Blob blob, int offset) {
-			return first.read(blob, offset);
-		}
-
-		@Override
-		public T getSecond(Content.Blob blob, int offset) {
-			int n = first.sizeOf();
-			return second.read(blob, offset + n);
-		}
-
-		@Override
-		public Content.Blob setFirst(S value, Content.Blob blob, int offset) {
-			return first.write(value, blob, offset);
-		}
-
-		@Override
-		public Content.Blob setSecond(T value, Content.Blob blob, int offset) {
-			int n = first.sizeOf();
-			return second.write(value, blob, offset);
-		}
-
-		@Override
-		public int sizeOf() {
-			return first.sizeOf() + second.sizeOf();
-		}
-
-		@Override
-		public int sizeOf(Blob blob, int offset) {
-			int f = first.sizeOf(blob, offset);
-			return f + second.sizeOf(blob, offset + f);
-		}
-
-		@Override
-		public Blob initialise(Blob blob, int offset) {
-			// Initialise first item
-			blob = first.initialise(blob, offset);
-			// Determine it's size
-			int f = first.sizeOf(blob, offset);
-			// Initialise second item
-			return second.initialise(blob, offset + f);
-		}
-
-		@Override
-		public U read(Blob blob, int offset) {
-			return constructor.apply(this, blob, offset);
+		public Blob insert(U proxy, Blob blob, int offset) {
+			byte[] bytes = proxy.toBytes();
+			return blob.replaceBytes(offset, 0, bytes);
 		}
 	}
 
 	public static class TestProxy extends Proxy<Integer, Integer, TestProxy> {
-		public static final Content.Layout<TestProxy> LAYOUT = create(INT32(1), INT32(2), TestProxy::new);
 
-		public TestProxy(Layout<Integer, Integer, TestProxy> layout, Blob blob, int offset) {
-			super(layout, blob, offset);
+		public static final Pair.Layout<Integer, Integer, TestProxy> LAYOUT = new Pair.Layout<Integer, Integer, TestProxy>(
+				INT32, INT32) {
+			@Override
+			public TestProxy read(Blob blob, int offset) {
+				return new TestProxy(blob, offset);
+			}
+		};
+
+		public TestProxy(Blob blob, int offset) {
+			super(LAYOUT, blob, offset);
 		}
 	}
 
@@ -245,6 +122,12 @@ public class Pair {
 		blob = TestProxy.LAYOUT.initialise(blob, 0);
 		// Access proxy
 		TestProxy tp = TestProxy.LAYOUT.read(blob, 0);
+		//
+		System.out.println("GOT: " + tp.getFirst() + ", " + tp.getSecond());
+		//
+		blob = tp.setFirst(1);
+		//
+		tp = TestProxy.LAYOUT.read(blob, 0);
 		//
 		System.out.println("GOT: " + tp.getFirst() + ", " + tp.getSecond());
 	}

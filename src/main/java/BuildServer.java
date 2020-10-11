@@ -7,8 +7,11 @@ import jledger.core.Content.Blob;
 import jledger.core.Content.Layout;
 import jledger.layouts.Array;
 import jledger.layouts.Pair;
+import jledger.layouts.Primitive.Int32Layout;
+
 import static jledger.layouts.Primitive.INT32;
 import jledger.util.AbstractProxy;
+import jledger.util.ByteBlob;
 import jledger.util.NonSequentialLedger;
 
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -23,8 +26,10 @@ public class BuildServer {
 
 	public void create(String name, byte[] contents) {
 		Directory d = ledger.get(ledger.versions() - 1);
+		//
+		d = d.append(new Entry());
 		// Write another one
-		//ledger.put(d.add(name.hashCode()));
+		ledger.put(d);
 	}
 
 	public void update(String name, byte[] contents) {
@@ -65,6 +70,10 @@ public class BuildServer {
 
 		public static final Layout LAYOUT = new Layout(Entry.LAYOUT);
 
+		public Directory() {
+			super(LAYOUT, ByteBlob.EMPTY, 0);
+		}
+
 		public Directory(Content.Blob blob, int offset) {
 			super(LAYOUT, blob, offset);
 		}
@@ -72,21 +81,24 @@ public class BuildServer {
 		@Override
 		public String toString() {
 			String r = "{";
-//			for (int i = 0; i != size(); ++i) {
-//				if (i != 0) {
-//					r += ",";
-//				}
-//				r += get(i);
-//			}
+			for (int i = 0; i != length(); ++i) {
+				if (i != 0) {
+					r += ",";
+				}
+				r += get(i);
+			}
 			return r + "}";
 		}
 	}
 
 	private static final class Entry extends Pair.Proxy<Integer, Integer, Entry> {
-		public static final Content.Layout<Entry> LAYOUT = Pair.create(INT32, INT32, Entry::new);
+		public static final class Layout extends Pair.Layout<Integer, Integer, Entry> implements Content.Layout<Directory> {
 
-		public Entry(Pair.Layout<Integer, Integer, Entry> layout, Content.Blob blob, int offset) {
-			super(layout, blob, offset);
+		};
+		public static final Content.Layout<Entry> LAYOUT = new Layout(INT32);
+
+		public Entry(Content.Blob blob, int offset) {
+			super(L, blob, offset);
 		}
 	}
 
