@@ -32,11 +32,6 @@ public class Primitive {
 		}
 
 		@Override
-		public Content.Blob initialise(Content.Blob blob, int offset) {
-			return insertInt(n, blob, offset);
-		}
-
-		@Override
 		public int sizeOf(Content.Blob blob, int offset) {
 			return 4;
 		}

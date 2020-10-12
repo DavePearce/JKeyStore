@@ -7,6 +7,7 @@ import jledger.core.Content.Blob;
 import jledger.core.Content.Layout;
 import jledger.layouts.Array;
 import jledger.layouts.Pair;
+import jledger.layouts.Pair.TestProxy;
 import jledger.layouts.Primitive.Int32Layout;
 
 import static jledger.layouts.Primitive.INT32;
@@ -26,10 +27,8 @@ public class BuildServer {
 
 	public void create(String name, byte[] contents) {
 		Directory d = ledger.get(ledger.versions() - 1);
-		//
-		d = d.append(new Entry());
 		// Write another one
-		ledger.put(d);
+		ledger.put(d.add(new Entry(contents.length,0)));
 	}
 
 	public void update(String name, byte[] contents) {
@@ -71,11 +70,16 @@ public class BuildServer {
 		public static final Layout LAYOUT = new Layout(Entry.LAYOUT);
 
 		public Directory() {
-			super(LAYOUT, ByteBlob.EMPTY, 0);
+			super(LAYOUT, LAYOUT.initialise(ByteBlob.EMPTY, 0), 0);
 		}
 
 		public Directory(Content.Blob blob, int offset) {
 			super(LAYOUT, blob, offset);
+		}
+
+		public Directory add(Entry e) {
+			Content.Blob blob = append(e);
+			return new Directory(blob, offset);
 		}
 
 		@Override
@@ -85,20 +89,28 @@ public class BuildServer {
 				if (i != 0) {
 					r += ",";
 				}
-				r += get(i);
+				r += get(i) + " ";
 			}
 			return r + "}";
 		}
 	}
 
 	private static final class Entry extends Pair.Proxy<Integer, Integer, Entry> {
-		public static final class Layout extends Pair.Layout<Integer, Integer, Entry> implements Content.Layout<Directory> {
 
+		public static final Pair.Layout<Integer, Integer, Entry> LAYOUT = new Pair.Layout<Integer, Integer, Entry>(
+				INT32, INT32) {
+			@Override
+			public Entry read(Blob blob, int offset) {
+				return new Entry(blob, offset);
+			}
 		};
-		public static final Content.Layout<Entry> LAYOUT = new Layout(INT32);
 
-		public Entry(Content.Blob blob, int offset) {
-			super(L, blob, offset);
+		public Entry(int first, int second) {
+			this(LAYOUT.initialise(ByteBlob.EMPTY, 0, first, second), 0);
+		}
+
+		public Entry(Blob blob, int offset) {
+			super(LAYOUT, blob, offset);
 		}
 	}
 
@@ -122,12 +134,16 @@ public class BuildServer {
 					Path path = (Path) event.context();
 					if (path.toString().matches("[a-zA-Z0-9]+.txt")) {
 						if (kind == ENTRY_CREATE) {
+							byte[] contents = Files.readAllBytes(path);
 							System.out.println("CREATE: " + path);
-							server.create(path.toString(), null);
+							server.create(path.toString(), contents);
 						} else if (kind == ENTRY_DELETE) {
 							System.out.println("DELETE: " + path);
+							server.remove(path.toString());
 						} else {
 							System.out.println("UPDATE: " + path);
+							byte[] contents = Files.readAllBytes(path);
+							server.update(path.toString(), contents);
 						}
 					}
 				}

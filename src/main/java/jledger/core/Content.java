@@ -62,15 +62,6 @@ public class Content {
 		public int sizeOf(Content.Blob blob, int offset);
 
 		/**
-		 * Initialise this layout at a given position within a blob. This will
-		 * initialise appropriate values for fields. For example, an integer may default
-		 * to zero, whilst an array may default to being empty, etc.
-		 *
-		 * @return
-		 */
-		public Content.Blob initialise(Content.Blob blob, int offset);
-
-		/**
 		 * Read the value representing an instantiation of this layout at a given
 		 * position in a blob.
 		 *

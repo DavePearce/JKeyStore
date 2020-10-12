@@ -109,6 +109,7 @@ public class Array {
 		}
 
 		public Content.Blob insert(int index, T value) {
+			final int n = length();
 			final Content.Layout<T> child = layout.child;
 			//
 			if (index < 0 || index >= length()) {
@@ -121,8 +122,10 @@ public class Array {
 				for (int i = 0; i < index; ++i) {
 					coffset += child.sizeOf(blob, offset);
 				}
-				// Overwrite existing child
-				return child.insert(value, blob, coffset);
+				// Insert  existing child
+				Content.Blob b = child.insert(value, blob, coffset);
+				// Update length field
+				return b.writeInt(offset, n + 1);
 			}
 		}
 
@@ -138,7 +141,9 @@ public class Array {
 				coffset += child.sizeOf(blob, offset);
 			}
 			// Overwrite existing child
-			return child.insert(value, blob, coffset);
+			Content.Blob b = child.insert(value, blob, coffset);
+			// Update length field
+			return b.writeInt(offset, n + 1);
 		}
 
 		@Override
@@ -170,16 +175,21 @@ public class Array {
 	 */
 	public static abstract class Layout<T, U extends Proxy<T,U>> implements Content.Layout<U> {
 		protected final Content.Layout<T> child;
-		protected final T[] values;
 
 		@SafeVarargs
 		public Layout(Content.Layout<T> child, T... values) {
 			this.child = child;
-			this.values = values;
 		}
 
-		@Override
-		public Content.Blob initialise(Content.Blob blob, int offset) {
+		/**
+		 * Initialise an array at a given position within a blob.
+		 *
+		 * @param blob
+		 * @param offset
+		 * @param values
+		 * @return
+		 */
+		public Content.Blob initialise(Content.Blob blob, int offset, T... values) {
 			// FIXME: can we make this more efficient?
 			blob = blob.insertInt(offset, values.length);
 			//

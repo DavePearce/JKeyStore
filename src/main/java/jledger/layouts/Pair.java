@@ -69,23 +69,22 @@ public class Pair {
 
 		public Content.Blob setSecond(T value, Content.Blob blob, int offset) {
 			int n = first.sizeOf(blob, offset);
-			return second.write(value, blob, offset);
+			return second.write(value, blob, offset + n);
+		}
+
+		public Blob initialise(Blob blob, int offset, S lhs, T rhs) {
+			// Initialise first item
+			blob = first.insert(lhs, blob, offset);
+			// Determine it's size
+			int n = first.sizeOf(blob, offset);
+			// Initialise second item
+			return second.insert(rhs, blob, offset + n);
 		}
 
 		@Override
 		public int sizeOf(Blob blob, int offset) {
 			int f = first.sizeOf(blob, offset);
 			return f + second.sizeOf(blob, offset + f);
-		}
-
-		@Override
-		public Blob initialise(Blob blob, int offset) {
-			// Initialise first item
-			blob = first.initialise(blob, offset);
-			// Determine it's size
-			int f = first.sizeOf(blob, offset);
-			// Initialise second item
-			return second.initialise(blob, offset + f);
 		}
 
 		@Override
@@ -119,7 +118,7 @@ public class Pair {
 	public static void main(String[] args) {
 		Content.Blob blob = ByteBlob.EMPTY;
 		// Initialise proxy
-		blob = TestProxy.LAYOUT.initialise(blob, 0);
+		blob = TestProxy.LAYOUT.initialise(blob, 0, 0, 1);
 		// Access proxy
 		TestProxy tp = TestProxy.LAYOUT.read(blob, 0);
 		//
