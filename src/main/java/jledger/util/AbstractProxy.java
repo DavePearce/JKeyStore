@@ -9,12 +9,6 @@ public class AbstractProxy<S extends Content.Proxy, T extends Content.Layout<S>>
 	protected final Content.Blob blob;
 	protected final int offset;
 
-	public AbstractProxy(T layout) {
-		this.layout = layout;
-		this.blob = layout.initialise(ByteBlob.EMPTY, 0);
-		this.offset = 0;
-	}
-
 	public AbstractProxy(T layout, Content.Blob blob, int offset) {
 		this.layout = layout;
 		this.blob = blob;

@@ -103,7 +103,7 @@ public class Pair {
 	public static class TestProxy extends Proxy<Integer, Integer, TestProxy> {
 
 		public static final Pair.Layout<Integer, Integer, TestProxy> LAYOUT = new Pair.Layout<Integer, Integer, TestProxy>(
-				INT32, INT32) {
+				INT, INT) {
 			@Override
 			public TestProxy read(Blob blob, int offset) {
 				return new TestProxy(blob, offset);

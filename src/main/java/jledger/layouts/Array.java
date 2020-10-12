@@ -74,7 +74,7 @@ public class Array {
 				coffset += 4;
 				// Locate child
 				for (int i = 0; i < index; ++i) {
-					coffset += child.sizeOf(blob, offset);
+					coffset += child.sizeOf(blob, coffset);
 				}
 				// Read out child
 				return child.read(blob, coffset);
@@ -101,7 +101,7 @@ public class Array {
 				coffset += 4;
 				// Locate child
 				for (int i = 0; i < index; ++i) {
-					coffset += child.sizeOf(blob, offset);
+					coffset += child.sizeOf(blob, coffset);
 				}
 				// Overwrite existing child
 				return child.write(value, blob, coffset);
@@ -120,7 +120,7 @@ public class Array {
 				coffset += 4;
 				// Locate child
 				for (int i = 0; i < index; ++i) {
-					coffset += child.sizeOf(blob, offset);
+					coffset += child.sizeOf(blob, coffset);
 				}
 				// Insert  existing child
 				Content.Blob b = child.insert(value, blob, coffset);
@@ -138,12 +138,32 @@ public class Array {
 			coffset += 4;
 			// Locate child
 			for (int i = 0; i < n; ++i) {
-				coffset += child.sizeOf(blob, offset);
+				coffset += child.sizeOf(blob, coffset);
 			}
 			// Overwrite existing child
 			Content.Blob b = child.insert(value, blob, coffset);
 			// Update length field
 			return b.writeInt(offset, n + 1);
+		}
+
+		public Content.Blob appendAll(T... values) {
+			final int n = length();
+			final Content.Layout<T> child = layout.child;
+			//
+			int coffset = offset;
+			// Skip over length
+			coffset += 4;
+			// Locate child
+			for (int i = 0; i < n; ++i) {
+				coffset += child.sizeOf(blob, coffset);
+			}
+			Content.Blob b = blob;
+			// Overwrite existing child
+			for (int i = (values.length-1); i >= 0; --i) {
+				b = child.insert(values[i], b, coffset);
+			}
+			// Update length field
+			return b.writeInt(offset, n + values.length);
 		}
 
 		@Override
