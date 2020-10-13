@@ -58,7 +58,11 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 	@Override
 	public T get(int v) {
 		int offset = (v == 0) ? 0 : offsets[v - 1];
-		// THIS IS COMPLETELY BROKEN!!
+		// FIXME: following is broken for two reasons. Firstly, for anything other than
+		// initial version, it's not doing the right thing since the data at the given
+		// offset represents an encoded transaction, not a snapshot. Secondly, unclear
+		// whether is sensible for initial blob to include data for all subsequent
+		// transactions.
 		return layout.read(new ByteBlob(bytes), offset);
 	}
 
@@ -73,11 +77,13 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 		offsets[versions++] = append(blob, offset);
 	}
 
-
 	private int append(Content.Blob b, int offset) {
 		if (b instanceof Content.Diff) {
 			Content.Diff d = (Content.Diff) b;
-			// Append parent replacements
+			// FIXME: this is broken because doesn't include count of replacements. This is
+			// challenging because need to extract this from parent somehow I guess?
+
+			// Append parent replacements (if any)
 			offset = append(d.parent(),offset);
 			// Recursive case
 			for (int i = 0; i != d.count(); ++i) {

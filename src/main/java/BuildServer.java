@@ -9,33 +9,29 @@ import jledger.layouts.Pair;
 
 import static jledger.layouts.Primitive.BYTE_ARRAY;
 import jledger.util.ByteBlob;
-import jledger.util.NonSequentialLedger;
+import jledger.util.SequentialLedger;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
 public class BuildServer {
-	private final NonSequentialLedger<Directory> ledger = new NonSequentialLedger<>(Directory.LAYOUT, 10);
-
-	public BuildServer() {
-		// Initialise with an empty directory
-		ledger.put(new Directory());
-	}
+	private final SequentialLedger<Directory> ledger = new SequentialLedger<>(new Directory(), 10);
 
 	public void create(String name, byte[] contents) {
 		Directory d = ledger.get(ledger.versions() - 1);
 		// Write another one
-		ledger.put(d.add(new Entry(name.getBytes(),contents)));
+		ledger.put(d.add(new Entry(name.getBytes(), contents)));
 	}
 
 	public void addAll(Entry[] entries) {
-		Directory d = ledger.get(ledger.versions() - 1);
+		Directory d = ledger.last();
 		// Write another one
 		ledger.put(d.addAll(entries));
 	}
 
 	public void update(String name, byte[] contents) {
 		Directory d = ledger.get(ledger.versions() - 1);
-		ledger.put(d.replace(name,contents));
+		ledger.put(d.replace(name, contents));
+		System.out.println("VERSIONS: " + ledger.versions() + ", SIZE: " + ledger.last().getBlob().size() + " bytes");
 	}
 
 	public void remove(String name) {
@@ -77,7 +73,7 @@ public class BuildServer {
 			for (int i = 0; i != length(); ++i) {
 				Entry ith = get(i);
 				String n = new String(ith.getFirst());
-				if(n.equals(name)) {
+				if (n.equals(name)) {
 					// Match
 					// FIXME: replacing whole entry!
 					Content.Blob b = set(i, new Entry(name.getBytes(), contents));
@@ -128,10 +124,10 @@ public class BuildServer {
 		Path p = fs.getPath(".");
 		// Initialise ledger with existing files
 		ArrayList<Entry> pairs = new ArrayList<>();
-		for(String f : p.toFile().list()) {
-			if(f.matches("[a-zA-Z0-9]+.txt")) {
+		for (String f : p.toFile().list()) {
+			if (f.matches("[a-zA-Z0-9]+.txt")) {
 				byte[] contents = Files.readAllBytes(fs.getPath(f));
-				pairs.add(new Entry(f.getBytes(),contents));
+				pairs.add(new Entry(f.getBytes(), contents));
 			}
 		}
 		//
