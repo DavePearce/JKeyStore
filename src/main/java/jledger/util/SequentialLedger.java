@@ -44,7 +44,11 @@ public class SequentialLedger<T extends Content.Proxy> implements Ledger<T> {
 	}
 
 	private void append(Content.Blob b) {
-		if (b instanceof Content.Diff) {
+		// Determine previous blob in sequence
+		Content.Blob prev = ledger[length - 1];
+		if(b == prev) {
+			// Do nothing as we are correctly appending something onto the previous block.
+		} else if (b instanceof Content.Diff) {
 			Content.Diff d = (Content.Diff) b;
 			// Append any parent transactions
 			append(d.parent());
@@ -54,8 +58,9 @@ public class SequentialLedger<T extends Content.Proxy> implements Ledger<T> {
 			}
 			// Append this transaction
 			ledger[length++] = b;
-		} else if (b != ledger[length - 1]) {
-			System.out.println("GOT: " + b + " : " + ledger[length-1]);
+		} else {
+			// This signals an attempt to append a block which was not derived from the
+			// previous block on the ledger.
 			throw new IllegalArgumentException("Non-sequential put");
 		}
 	}
