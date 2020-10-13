@@ -9,7 +9,22 @@ import jledger.util.ByteBlob;
 
 import static jledger.layouts.Primitive.*;
 
+import java.util.function.BiFunction;
+
 public class Pair {
+
+	public static <S, T, U extends Proxy<S, T, U>> Pair.Layout<S, T, U> LAYOUT(Content.Layout<S> first,
+			Content.Layout<T> second, BiFunction<Content.Blob, Integer, U> constructor) {
+		return new Layout<S, T, U>(first, second) {
+
+			@Override
+			public U read(Blob blob, int offset) {
+				return constructor.apply(blob, offset);
+			}
+
+		};
+	}
+
 	/**
 	 * Represents a pair of items in a given layout.
 	 *

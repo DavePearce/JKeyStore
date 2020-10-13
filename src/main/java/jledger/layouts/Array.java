@@ -1,11 +1,25 @@
 package jledger.layouts;
 
+import java.util.function.BiFunction;
+
 import jledger.core.Content;
 import jledger.core.Content.Blob;
 import jledger.core.Content.Constructor;
 import jledger.util.AbstractProxy;
 
 public class Array {
+
+	public static <T, U extends Proxy<T, U>> Array.Layout<T, U> LAYOUT(Content.Layout<T> child,
+			BiFunction<Content.Blob, Integer, U> constructor) {
+		return new Layout<T, U>(child) {
+
+			@Override
+			public U read(Blob blob, int offset) {
+				return constructor.apply(blob, offset);
+			}
+
+		};
+	}
 
 	/**
 	 * A proxy for an array of dynamically-sized elements.
@@ -196,8 +210,7 @@ public class Array {
 	public static abstract class Layout<T, U extends Proxy<T,U>> implements Content.Layout<U> {
 		protected final Content.Layout<T> child;
 
-		@SafeVarargs
-		public Layout(Content.Layout<T> child, T... values) {
+		public Layout(Content.Layout<T> child) {
 			this.child = child;
 		}
 

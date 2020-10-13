@@ -1,20 +1,13 @@
 import java.io.IOException;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
-import jledger.core.Content.Layout;
 import jledger.layouts.Array;
 import jledger.layouts.Pair;
-import jledger.layouts.Pair.TestProxy;
-import jledger.layouts.Primitive.IntLayout;
 
-import static jledger.layouts.Primitive.INT;
-import static jledger.layouts.Primitive.BYTES;
-import jledger.util.AbstractProxy;
+import static jledger.layouts.Primitive.BYTE_ARRAY;
 import jledger.util.ByteBlob;
 import jledger.util.NonSequentialLedger;
 
@@ -60,24 +53,7 @@ public class BuildServer {
 	}
 
 	private static final class Directory extends Array.Proxy<Entry, Directory> {
-		/**
-		 * Define layout for directories.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public static final class Layout extends Array.Layout<Entry, Directory> implements Content.Layout<Directory> {
-			public Layout(Content.Layout<Entry> child, Entry... values) {
-				super(child, values);
-			}
-
-			@Override
-			public Directory read(Blob blob, int offset) {
-				return new Directory(blob,offset);
-			}
-		}
-
-		public static final Layout LAYOUT = new Layout(Entry.LAYOUT);
+		public static final Array.Layout<Entry, Directory> LAYOUT = Array.LAYOUT(Entry.LAYOUT, Directory::new);
 
 		public Directory() {
 			super(LAYOUT, LAYOUT.initialise(ByteBlob.EMPTY, 0), 0);
@@ -127,14 +103,7 @@ public class BuildServer {
 	}
 
 	private static final class Entry extends Pair.Proxy<byte[], byte[], Entry> {
-
-		public static final Pair.Layout<byte[], byte[], Entry> LAYOUT = new Pair.Layout<byte[], byte[], Entry>(BYTES,
-				BYTES) {
-			@Override
-			public Entry read(Blob blob, int offset) {
-				return new Entry(blob, offset);
-			}
-		};
+		public static final Pair.Layout<byte[], byte[], Entry> LAYOUT = Pair.LAYOUT(BYTE_ARRAY, BYTE_ARRAY, Entry::new);
 
 		public Entry(byte[] first, byte[] second) {
 			this(LAYOUT.initialise(ByteBlob.EMPTY, 0, first, second), 0);
