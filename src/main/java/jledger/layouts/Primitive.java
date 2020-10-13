@@ -36,7 +36,7 @@ public class Primitive {
 	// Implementations
 	// =======================================================================
 
-	private static class ShortLayout implements Content.StaticLayout<Short> {
+	public static class ShortLayout implements Content.StaticLayout<Short> {
 		@Override
 		public int sizeOf(Content.Blob blob, int offset) {
 			return 2;
@@ -63,7 +63,7 @@ public class Primitive {
 		}
 	}
 
-	private static class IntLayout implements Content.StaticLayout<Integer> {
+	public static class IntLayout implements Content.StaticLayout<Integer> {
 		@Override
 		public int sizeOf(Content.Blob blob, int offset) {
 			return 4;
@@ -90,8 +90,7 @@ public class Primitive {
 		}
 	}
 
-
-	private static class ByteArrayLayout implements Content.Layout<byte[]> {
+	public static class ByteArrayLayout implements Content.Layout<byte[]> {
 
 		@Override
 		public int sizeOf(Blob blob, int offset) {
