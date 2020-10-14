@@ -17,7 +17,7 @@ import java.util.Arrays;
 
 /**
  * Provides a collection of useful array manipulation methods.
- * 
+ *
  * @author David J. Pearce
  *
  */
@@ -41,11 +41,11 @@ public class ArrayUtils {
 		// All good
 		return true;
 	}
-	
+
 	/**
 	 * Replace a sequence of bytes in a given array with another sequence (which may
 	 * have a different size).
-	 * 
+	 *
 	 * @param bytes       The original sequence of bytes
 	 * @param offset      The offset in the original sequence where replacement
 	 *                    begins
@@ -55,7 +55,7 @@ public class ArrayUtils {
 	 *                    original sequence
 	 * @return
 	 */
-	public  static byte[] replace(byte[] bytes, int offset, int length, byte[] replacement) {
+	public static byte[] replace(byte[] bytes, int offset, int length, byte[] replacement) {
 		// Calculate size of the updated sequence
 		final int size = (bytes.length - length) + replacement.length;
 		byte[] nbytes = new byte[size];
@@ -69,5 +69,44 @@ public class ArrayUtils {
 		System.arraycopy(bytes, offset + length, nbytes, n, nbytes.length - n);
 		// Done
 		return nbytes;
+	}
+
+
+	/**
+	 * Remove any occurrence of a given value from an array. The resulting array
+	 * may be shorter in length, but the relative position of all other items
+	 * will remain unchanged. This algorithm is robust to <code>null</code>. The
+	 * <code>items</code> array may contain <code>null</code> values and the
+	 * <code>item</code> may itself be <code>null</code> (in which case, all
+	 * <code>null</code> values are removed).
+	 *
+	 * @param items
+	 * @return
+	 */
+	public static <T> T[] removeAll(T[] items, T item) {
+		int count = 0;
+		// First, determine the number of elements which will be removed
+		for (int i = 0; i != items.length; ++i) {
+			T ith = items[i];
+			if (ith == item || (item != null && item.equals(ith))) {
+				count++;
+			}
+		}
+		// Second, eliminate duplicates (if any)
+		if (count == 0) {
+			// nothing actually needs to be removed
+			return items;
+		} else {
+			T[] nItems = Arrays.copyOf(items, items.length - count);
+			for(int i=0, j = 0;i!=items.length;++i) {
+				T ith = items[i];
+				if (ith == item || (item != null && item.equals(ith))) {
+					// skip item
+				} else {
+					nItems[j++] = ith;
+				}
+			}
+			return nItems;
+		}
 	}
 }

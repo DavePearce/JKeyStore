@@ -58,7 +58,7 @@ public class ByteBlob extends AbstractBlob {
 	@Override
 	public short readShort(int index) {
 		byte b1 = bytes[index];
-		byte b2 = bytes[index+1];
+		byte b2 = bytes[index + 1];
 		// Recombine bytes
 		return (short) ((b1 << 8) | b2);
 	}
@@ -66,9 +66,9 @@ public class ByteBlob extends AbstractBlob {
 	@Override
 	public int readInt(int index) {
 		byte b1 = bytes[index];
-		byte b2 = bytes[index+1];
-		byte b3 = bytes[index+2];
-		byte b4 = bytes[index+3];
+		byte b2 = bytes[index + 1];
+		byte b3 = bytes[index + 2];
+		byte b4 = bytes[index + 3];
 		// Recombine bytes
 		return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
 	}
@@ -137,8 +137,8 @@ public class ByteBlob extends AbstractBlob {
 	 * <p>
 	 * The current extraction mechanism could still be improved in that it can
 	 * generate lots of small delta's when a single large one would be more
-	 * sensible. Potentially, some form of post processing could coalesce delta's
-	 * as necessary.
+	 * sensible. Potentially, some form of post processing could coalesce delta's as
+	 * necessary.
 	 * </p>
 	 *
 	 * @param mapping
@@ -231,7 +231,6 @@ public class ByteBlob extends AbstractBlob {
 		return Z;
 	}
 
-
 	protected static void extractSubsequence(int[] C, int[] Z, int i, int j) {
 		final int m = Z.length + 1;
 		if (i > 0 && j > 0) {
@@ -285,9 +284,14 @@ public class ByteBlob extends AbstractBlob {
 	}
 
 	public static void main(String[] args) {
-		Content.Blob blob = ByteBlob.EMPTY;
-		blob = blob.writeByte(10, (byte) 0b0001).writeByte(20, (byte) 11);
-		System.out.println(Arrays.toString(blob.readAll()));
+		ByteBlob b1 = new ByteBlob("hello".getBytes());
+		Diff d = diff("hello".getBytes(), "hEEllO".getBytes());
+		//
+		System.out.println(d.parent() + " => " + d);
+		//
+		for (int i = 0; i != d.size(); ++i) {
+			System.out.print(Character.toString((char) d.readByte(i)));
+		}
 	}
 }
 
@@ -358,6 +362,12 @@ abstract class AbstractBlob implements Content.Blob {
 	@Override
 	public Diff insertBytes(int offset, byte... bytes) {
 		return new Diff(this, new Replacement(offset, 0, bytes));
+	}
+
+	@Override
+	public AbstractBlob compact(Content.Blob blob) {
+		// FIXME: am figuring out to do this.
+		throw new UnsupportedOperationException();
 	}
 }
 
@@ -439,6 +449,7 @@ class Diff extends AbstractBlob implements Content.Diff {
 
 	@Override
 	public byte readByte(int index) {
+		// TODO: could be more efficient using a binary search.
 		for (int i = 0; i != replacements.length; ++i) {
 			Replacement ith = replacements[i];
 			if (ith.offset > index) {
@@ -569,6 +580,82 @@ class Diff extends AbstractBlob implements Content.Diff {
 			ithm1 = ith;
 		}
 		return true;
+	}
+
+	/**
+	 * Combine two sets of replacements together to form one. This is challenging
+	 * because the first is expressed in terms of the original layout, whilst the
+	 * latter expressed in the layout after the first is applied.
+	 *
+	 * @param before
+	 * @param after
+	 * @return
+	 */
+	public static Replacement[] merge(Replacement[] before, Replacement[] after) {
+		// Optimistically assume no conflicts between replacements. If there are
+		// conflicts, then we'll need to trim this array at the end.
+		Replacement[] results = new Replacement[before.length + after.length];
+		//
+		int i = 0, j = 0, k = 0;
+		int delta = 0;
+		while (i < before.length && j < after.length) {
+			Replacement ith = before[i];
+			Replacement jth = after[j];
+			Replacement kth;
+			// FIXME: following calculations are broken because they are not properly
+			// account for effect of ith.bytes.length.
+			int ith_offset = ith.offset;
+			int ith_last = ith_offset + ith.length;
+			// Account for change in layout
+			int jth_offset = jth.offset + delta;
+			int jth_last = jth_offset + jth.length;
+			// Decide which applies first
+			if (ith_last < jth_offset) {
+				// ith completely disjoint
+				kth = ith;
+				// update delta
+				delta += ith.diff();
+				// Shift along
+				i = i + 1;
+			} else if (jth_last < ith_offset) {
+				// jth completely disjoint
+				kth = translate(jth, delta);
+				// Shift along
+				j = j + 1;
+			} else {
+				kth = merge(ith, jth, delta);
+				// Shift along
+				i = i + 1;
+				j = j + 1;
+			}
+			// Construct kth
+			results[k++] = kth;
+		}
+		// Trim array to account for merges.
+		return ArrayUtils.removeAll(results, null);
+	}
+
+	/**
+	 * Translate a given replacement by a given delta.
+	 *
+	 * @param jth
+	 * @param delta
+	 * @return
+	 */
+	private static Replacement translate(Replacement jth, int delta) {
+		return (delta == 0) ? jth : new Replacement(jth.offset + delta, jth.length, jth.bytes);
+	}
+
+	/**
+	 * Merge before and after replacements assuming a given delta between them.
+	 *
+	 * @param ith
+	 * @param jth
+	 * @param delta
+	 * @return
+	 */
+	private static Replacement merge(Replacement ith, Replacement jth, int delta) {
+
 	}
 }
 

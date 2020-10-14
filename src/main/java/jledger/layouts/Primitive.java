@@ -108,8 +108,8 @@ public class Primitive {
 			final int n = blob.readInt(offset);
 			// Replace existing bytes
 			Blob b = blob.replaceBytes(offset + 4, n, bytes);
-			// Update length
-			return b.writeInt(offset, bytes.length);
+			// Update length (if necessary)
+			return (n == bytes.length) ? b : b.writeInt(offset, bytes.length);
 		}
 
 		@Override

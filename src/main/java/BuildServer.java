@@ -31,7 +31,7 @@ public class BuildServer {
 	public void update(String name, byte[] contents) {
 		Directory d = ledger.get(ledger.versions() - 1);
 		ledger.put(d.replace(name, contents));
-		System.out.println("VERSIONS: " + ledger.versions() + ", SIZE: " + ledger.last().getBlob().size() + " bytes");
+		System.out.println("VERSIONS: " + ledger.versions() + ", SIZE: " + toSummaryString(ledger.last().getBlob()) + " bytes");
 	}
 
 	public void remove(String name) {
@@ -46,6 +46,21 @@ public class BuildServer {
 			r += d.toString();
 		}
 		return r;
+	}
+
+	private static String toSummaryString(Content.Blob b) {
+		String r = "";
+		if(b instanceof Content.Diff) {
+			Content.Diff d = (Content.Diff) b;
+			r += toSummaryString(d.parent());
+			int c = 0;
+			for(int i=0;i!=d.count();++i) {
+				c += d.getReplacement(i).bytes().length;
+			}
+			return r + "[" + c + "]";
+		} else {
+			return "[" + b.size() + "]";
+		}
 	}
 
 	private static final class Directory extends Array.Proxy<Entry, Directory> {
@@ -75,10 +90,10 @@ public class BuildServer {
 				String n = new String(ith.getFirst());
 				if (n.equals(name)) {
 					// Match
-					// FIXME: replacing whole entry!
-					Content.Blob b = set(i, new Entry(name.getBytes(), contents));
+					// FIXME: replacing whole contents
+					Content.Blob b = ith.replace(contents);
 					//
-					return new Directory(b, offset);
+					return new Directory(b.compact(blob), offset);
 				}
 			}
 			// Nothing found
@@ -107,6 +122,11 @@ public class BuildServer {
 
 		public Entry(Blob blob, int offset) {
 			super(LAYOUT, blob, offset);
+		}
+
+		public Content.Blob replace(byte[] contents) {
+			System.out.println("************************");
+			return setSecond(contents);
 		}
 
 		@Override

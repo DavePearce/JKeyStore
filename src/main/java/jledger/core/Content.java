@@ -305,6 +305,16 @@ public class Content {
 		 * @return
 		 */
 		public Diff insertBytes(int index, byte... bytes);
+
+		/**
+		 * Compact a given blob with respect to a given parent. This ensures at most a
+		 * single <code>Content.Diff</code> before the given parent. In otherwise, all
+		 * updates inbetween are flatterned into a single transaction.
+		 *
+		 * @param parent
+		 * @return
+		 */
+		public Content.Blob compact(Content.Blob parent);
 	}
 
 	/**
