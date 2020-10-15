@@ -259,6 +259,398 @@ public class ByteBlobDiffTests {
 		assertArrayEquals("hello worL".getBytes(),vs[9].readAll());
 	}
 
+	@Test
+	public void test_08() {
+		// disjoint writes (first lower and increasing)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) '_');
+		Content.Blob v3 = v2.writeBytes(7, (byte) 'W', (byte) 'O');
+		assertArrayEquals("HEL_lo World".getBytes(),v2.readAll());
+		assertArrayEquals("HEL_lo WOrld".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+	}
+
+	@Test
+	public void test_09() {
+		// disjoint writes (first lower and decreasing)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E');
+		Content.Blob v3 = v2.writeBytes(5, (byte) 'W', (byte) 'O');
+		assertArrayEquals("HElo World".getBytes(),v2.readAll());
+		assertArrayEquals("HElo WOrld".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+	}
+
+	@Test
+	public void test_10() {
+		// disjoint writes (first higher and increasing)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(6, 2, (byte) 'W', (byte) 'O', (byte) '_');
+		Content.Blob v3 = v2.writeBytes(1, (byte) 'E', (byte) 'L');
+		assertArrayEquals("Hello WO_rld".getBytes(),v2.readAll());
+		assertArrayEquals("HELlo WO_rld".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+	}
+
+	@Test
+	public void test_11() {
+		// disjoint writes (first higher and decreasing)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(6, 2, (byte) 'W');
+		Content.Blob v3 = v2.writeBytes(1, (byte) 'E', (byte) 'L');
+		assertArrayEquals("Hello Wrld".getBytes(),v2.readAll());
+		assertArrayEquals("HELlo Wrld".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+	}
+
+	@Test
+	public void test_12() {
+		// disjoint writes (third goes in between)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) '_');
+		Content.Blob v3 = v2.writeBytes(7, (byte) 'W', (byte) 'O');
+		Content.Blob v4 = v3.writeBytes(5, (byte) '0');
+		assertArrayEquals("HEL_lo World".getBytes(),v2.readAll());
+		assertArrayEquals("HEL_lo WOrld".getBytes(),v3.readAll());
+		assertArrayEquals("HEL_l0 WOrld".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff)v4).parent() == v1);
+	}
+
+	@Test
+	public void test_13() {
+		// disjoint writes (third goes in after)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) '_');
+		Content.Blob v3 = v2.writeBytes(7, (byte) 'W', (byte) 'O');
+		Content.Blob v4 = v3.writeBytes(10, (byte) '1');
+		assertArrayEquals("HEL_lo World".getBytes(),v2.readAll());
+		assertArrayEquals("HEL_lo WOrld".getBytes(),v3.readAll());
+		assertArrayEquals("HEL_lo WOr1d".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff)v4).parent() == v1);
+	}
+
+
+	@Test
+	public void test_14() {
+		// adjacent writes (first higher and increasing)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(6, 3, (byte) 'W', (byte) 'O', (byte) 'R', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(4, (byte) '0', (byte) '_');
+		assertArrayEquals("Hello WORLld".getBytes(),v2.readAll());
+		assertArrayEquals("Hell0_WORLld".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_15() {
+		// adjacent writes (first higher and decreasing)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(6, 3, (byte) 'W', (byte) 'O');
+		Content.Blob v3 = v2.writeBytes(4, (byte) '0', (byte) '_');
+		assertArrayEquals("Hello WOld".getBytes(),v2.readAll());
+		assertArrayEquals("Hell0_WOld".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_16() {
+		// adjacent writes (first lower and increasing)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(5, (byte) '0', (byte) '_');
+		assertArrayEquals("HELLLo World".getBytes(),v2.readAll());
+		assertArrayEquals("HELLL0_World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_17() {
+		// adjacent writes (first lower and decreasing)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(3, (byte) '0', (byte) '_');
+		assertArrayEquals("HELo World".getBytes(),v2.readAll());
+		assertArrayEquals("HEL0_World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_18() {
+		// adjacent writes (increasing and third inbetween)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(6, (byte) '_');
+		Content.Blob v4 = v3.writeBytes(5, (byte) '0');
+		assertArrayEquals("HELLLo World".getBytes(),v2.readAll());
+		assertArrayEquals("HELLLo_World".getBytes(),v3.readAll());
+		assertArrayEquals("HELLL0_World".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).parent() == v1);
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).count() == 1);
+	}
+
+	@Test
+	public void test_19() {
+		// adjacent writes (decreasing and third inbetween)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(4, (byte) '_');
+		Content.Blob v4 = v3.writeBytes(3, (byte) '0');
+		assertArrayEquals("HELo World".getBytes(),v2.readAll());
+		assertArrayEquals("HELo_World".getBytes(),v3.readAll());
+		assertArrayEquals("HEL0_World".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).parent() == v1);
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).count() == 1);
+	}
+
+	@Test
+	public void test_20() {
+		// conflicting writes (second exact replaces first)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'O');
+		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1', (byte) '0');
+		assertArrayEquals("HELLO World".getBytes(),v2.readAll());
+		assertArrayEquals("H_110 World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_21() {
+		// conflicting writes (second strictly replaces first)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.writeBytes(2, (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1', (byte) '0');
+		assertArrayEquals("HeLLo World".getBytes(),v2.readAll());
+		assertArrayEquals("H_110 World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_22() {
+		// conflicting writes (second replaces first lower)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1', (byte) '0');
+		assertArrayEquals("HELLo World".getBytes(),v2.readAll());
+		assertArrayEquals("H_110 World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_23() {
+		// conflicting writes (second replaces first upper)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.writeBytes(2, (byte) 'L', (byte) 'L', (byte) 'O');
+		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1', (byte) '0');
+		assertArrayEquals("HeLLO World".getBytes(),v2.readAll());
+		assertArrayEquals("H_110 World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_24() {
+		// conflicting writes (second strictly within first)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'O');
+		Content.Blob v3 = v2.writeBytes(2, (byte) '_', (byte) '1');
+		assertArrayEquals("HELLO World".getBytes(),v2.readAll());
+		assertArrayEquals("HE_1O World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_25() {
+		// conflicting writes (second within first lower)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'O');
+		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1');
+		assertArrayEquals("HELLO World".getBytes(),v2.readAll());
+		assertArrayEquals("H_1LO World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_26() {
+		// conflicting writes (second within first higher)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'O');
+		Content.Blob v3 = v2.writeBytes(3, (byte) '1', (byte) '0');
+		assertArrayEquals("HELLO World".getBytes(),v2.readAll());
+		assertArrayEquals("HEL10 World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_27() {
+		// conflicting writes (first increasing second right)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(2, (byte) '1', (byte) '1', (byte) '1');
+		assertArrayEquals("HELLlo World".getBytes(),v2.readAll());
+		assertArrayEquals("HE111o World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_28() {
+		// conflicting writes (first decreasing second right)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(2, (byte) '1', (byte) '0');
+		assertArrayEquals("HELo World".getBytes(),v2.readAll());
+		assertArrayEquals("HE10 World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_29() {
+		// conflicting writes (first increasing second left)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(2, 2, (byte) 'L', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1');
+		assertArrayEquals("HeLLLo World".getBytes(),v2.readAll());
+		assertArrayEquals("H_11Lo World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_30() {
+		// conflicting writes (first decreasing second left)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(2, 3, (byte) 'L', (byte) 'O');
+		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1');
+		assertArrayEquals("HeLO World".getBytes(),v2.readAll());
+		assertArrayEquals("H_1O World".getBytes(),v3.readAll());
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
+	}
+
+	@Test
+	public void test_31() {
+		// conflicting writes (exactly replacing first and second)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(5, (byte) '0');
+		Content.Blob v4 = v3.writeBytes(1, (byte) '_',(byte) '1',(byte) '1',(byte) '1',(byte) '0');
+		assertArrayEquals("HELLlo World".getBytes(),v2.readAll());
+		assertArrayEquals("HELLl0 World".getBytes(),v3.readAll());
+		assertArrayEquals("H_1110 World".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).parent() == v1);
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).count() == 1);
+	}
+
+	@Test
+	public void test_32() {
+		// conflicting writes (strictly replacing first and second)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(5, (byte) 'O');
+		Content.Blob v4 = v3.writeBytes(0, (byte) '#',(byte) '_',(byte) '1',(byte) '1',(byte) '1',(byte) '0',(byte) '_');
+		assertArrayEquals("HELLlo World".getBytes(),v2.readAll());
+		assertArrayEquals("HELLlO World".getBytes(),v3.readAll());
+		assertArrayEquals("#_1110_World".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).parent() == v1);
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).count() == 1);
+	}
+
+	@Test
+	public void test_33() {
+		// conflicting writes (partially replace first exactly replace second)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(5, (byte) 'O');
+		Content.Blob v4 = v3.writeBytes(2, (byte) '1',(byte) '1',(byte) '1',(byte) '0');
+		assertArrayEquals("HELLlo World".getBytes(),v2.readAll());
+		assertArrayEquals("HELLlO World".getBytes(),v3.readAll());
+		assertArrayEquals("HE1110 World".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).parent() == v1);
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).count() == 1);
+	}
+
+	@Test
+	public void test_34() {
+		// conflicting writes (partially replace first strictly replace second)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(5, (byte) 'O');
+		Content.Blob v4 = v3.writeBytes(2, (byte) '1',(byte) '1',(byte) '1',(byte) '0',(byte) '_');
+		assertArrayEquals("HELLlo World".getBytes(),v2.readAll());
+		assertArrayEquals("HELLlO World".getBytes(),v3.readAll());
+		assertArrayEquals("HE1110_World".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).parent() == v1);
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).count() == 1);
+	}
+
+	@Test
+	public void test_35() {
+		// conflicting writes (exactly replace first partially replace second)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(5, (byte) 'O', (byte) '_');
+		Content.Blob v4 = v3.writeBytes(1, (byte) '_',(byte) '1',(byte) '1',(byte) '1',(byte) '0');
+		assertArrayEquals("HELLlo World".getBytes(),v2.readAll());
+		assertArrayEquals("HELLlO_World".getBytes(),v3.readAll());
+		assertArrayEquals("H_1110_World".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).parent() == v1);
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).count() == 1);
+	}
+
+	@Test
+	public void test_36() {
+		// conflicting writes (strictly replace first partially replace second)
+		byte[] bs1 = "Hello World".getBytes();
+		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
+		Content.Blob v3 = v2.writeBytes(5, (byte) 'O', (byte) '_');
+		Content.Blob v4 = v3.writeBytes(0, (byte) '#',(byte) '_',(byte) '1',(byte) '1',(byte) '1',(byte) '0');
+		assertArrayEquals("HELLlo World".getBytes(),v2.readAll());
+		assertArrayEquals("HELLlO_World".getBytes(),v3.readAll());
+		assertArrayEquals("#_1110_World".getBytes(),v4.readAll());
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).parent() == v1);
+		assertTrue((v4 instanceof Content.Diff) && ((Content.Diff) v4).count() == 1);
+	}
+
 	// ===================================================================
 	// Multi Tests
 	// ===================================================================
