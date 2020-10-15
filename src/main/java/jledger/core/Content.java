@@ -307,14 +307,15 @@ public class Content {
 		public Diff insertBytes(int index, byte... bytes);
 
 		/**
-		 * Compact a given blob with respect to a given parent. This ensures at most a
-		 * single <code>Content.Diff</code> before the given parent. In otherwise, all
-		 * updates inbetween are flatterned into a single transaction.
+		 * Merge two (disjoint) siblings together into one. For this to be valid, they
+		 * must either: both have the same parent; or one is the immediate parent of the
+		 * other.
 		 *
 		 * @param parent
 		 * @return
 		 */
-		public Content.Blob compact(Content.Blob parent);
+		public Content.Blob merge(Content.Blob sibling);
+
 	}
 
 	/**
@@ -343,6 +344,7 @@ public class Content {
 		 * @return
 		 */
 		public Replacement getReplacement(int i);
+
 	}
 
 	public interface Replacement {

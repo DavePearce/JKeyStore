@@ -30,7 +30,6 @@ public class ArrayUtils {
 	 * @return
 	 */
 	public static <T extends Comparable<T>> boolean isSorted(T[] children) {
-		int r = 0;
 		for (int i = 1; i < children.length; ++i) {
 			int c = children[i - 1].compareTo(children[i]);
 			if (c > 0) {
@@ -71,6 +70,55 @@ public class ArrayUtils {
 		return nbytes;
 	}
 
+	/**
+	 * Append an items onto the end of an array of unknown type together, producing
+	 * a fresh array whose length equals that of the first and second added
+	 * together.
+	 *
+	 * @param lhs The left-hand side. Elements of this array will be copied first
+	 *            into the resulting array.
+	 * @param rhs The right-hand side which will form the last element of the
+	 *            resulting array
+	 * @return
+	 */
+	public static <T> T[] append(T[] lhs, T rhs) {
+		final int n = lhs.length;
+		T[] rs = java.util.Arrays.copyOf(lhs, n + 1);
+		rs[n] = rhs;
+		return rs;
+	}
+
+	/**
+	 * Append two byte arrays type together, producing a fresh array whose length
+	 * equals that of the first and second added together.
+	 *
+	 * @param lhs The left-hand side. Elements of this array will be copied first
+	 *            into the resulting array.
+	 * @param rhs The right-hand side. Elements of this array will be copied last
+	 *            into the resulting array.
+	 * @return
+	 */
+	public static byte[] append(byte[] lhs, byte[] rhs) {
+		byte[] rs = java.util.Arrays.copyOf(lhs, lhs.length + rhs.length);
+		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
+		return rs;
+	}
+
+	/**
+	 * Insert a given item into an array of items at the given position producing an
+	 * updated array where everything else remains unchanged.
+	 *
+	 * @param <T>
+	 * @param index
+	 * @param item
+	 * @param items
+	 */
+	public static <T> T[] insert(int index, T item, T[] items) {
+		T[] nitems = Arrays.copyOf(items, items.length + 1);
+		System.arraycopy(items, index, nitems, index + 1, items.length - index);
+		nitems[index] = item;
+		return nitems;
+	}
 
 	/**
 	 * Remove any occurrence of a given value from an array. The resulting array

@@ -27,7 +27,7 @@ import jledger.core.Content.Blob;
  * @author David J. Pearce
  *
  */
-public class ByteBlob extends AbstractBlob {
+public final class ByteBlob implements Content.Blob {
 	/**
 	 * An empty blob which is useful in all situations where there is no initial
 	 * data.
@@ -85,6 +85,86 @@ public class ByteBlob extends AbstractBlob {
 		System.arraycopy(bytes, index, dest, destStart, length);
 	}
 
+
+	@Override
+	public Diff writeByte(int index, byte b) {
+		return new Diff(this, new Replacement(index, 1, b));
+	}
+
+	@Override
+	public Diff writeShort(int offset, short value) {
+		// Convert value into bytes
+		byte b1 = (byte) ((value >> 8) & 0xFF);
+		byte b2 = (byte) (value & 0xFF);
+		return new Diff(this, new Replacement(offset, 2, b1, b2));
+	}
+
+	@Override
+	public Diff writeInt(int offset, int value) {
+		// Convert value into bytes
+		byte b1 = (byte) ((value >> 24) & 0xFF);
+		byte b2 = (byte) ((value >> 16) & 0xFF);
+		byte b3 = (byte) ((value >> 8) & 0xFF);
+		byte b4 = (byte) (value & 0xFF);
+		return new Diff(this, new Replacement(offset, 4, b1, b2, b3, b4));
+	}
+
+	@Override
+	public Diff writeBytes(int offset, byte... bytes) {
+		return new Diff(this, new Replacement(offset, bytes.length, bytes));
+	}
+
+	@Override
+	public Diff replaceBytes(int offset, int length, byte... bytes) {
+		return new Diff(this, new Replacement(offset, length, bytes));
+	}
+
+	@Override
+	public Diff insertByte(int offset, byte b) {
+		return new Diff(this, new Replacement(offset, 0, b));
+	}
+
+	@Override
+	public Diff insertShort(int offset, short value) {
+		// Convert value into bytes
+		byte b1 = (byte) ((value >> 8) & 0xFF);
+		byte b2 = (byte) (value & 0xFF);
+		return new Diff(this, new Replacement(offset, 0, b1, b2));
+	}
+
+	@Override
+	public Diff insertInt(int offset, int value) {
+		// Convert value into bytes
+		byte b1 = (byte) ((value >> 24) & 0xFF);
+		byte b2 = (byte) ((value >> 16) & 0xFF);
+		byte b3 = (byte) ((value >> 8) & 0xFF);
+		byte b4 = (byte) (value & 0xFF);
+		return new Diff(this, new Replacement(offset, 0, b1, b2, b3, b4));
+	}
+
+	@Override
+	public Diff insertBytes(int offset, byte... bytes) {
+		return new Diff(this, new Replacement(offset, 0, bytes));
+	}
+
+	@Override
+	public Content.Blob merge(Content.Blob blob) {
+		if(blob == this) {
+			return this;
+		} else if(blob instanceof Content.Diff) {
+			Content.Diff d = (Content.Diff) blob;
+			if(d.parent() == this) {
+				return blob;
+			}
+		}
+		throw new IllegalArgumentException("cannot merge blob");
+	}
+
+	@Override
+	public String toString() {
+		return Arrays.toString(bytes);
+	}
+
 	/**
 	 * Construct a diff between two arrays of bytes using the <i>longest common
 	 * subsequence</i> algorithm.
@@ -100,11 +180,6 @@ public class ByteBlob extends AbstractBlob {
 		List<Replacement> deltas = extractDeltas(mapping, after);
 		// Contruct final diff.
 		return new Diff(new ByteBlob(before), deltas.toArray(new Replacement[deltas.size()]));
-	}
-
-	@Override
-	public String toString() {
-		return Arrays.toString(bytes);
 	}
 
 	/**
@@ -285,89 +360,15 @@ public class ByteBlob extends AbstractBlob {
 
 	public static void main(String[] args) {
 		ByteBlob b1 = new ByteBlob("hello".getBytes());
-		Diff d = diff("hello".getBytes(), "hEEllO".getBytes());
+		Content.Blob b2 = b1.writeBytes(1, (byte) 'E', (byte) '?');
+		Content.Blob b3 = b2.writeBytes(0, (byte) 'H',(byte) '_',(byte) '_',(byte) '_');
 		//
-		System.out.println(d.parent() + " => " + d);
+		System.out.println(b1 + " => " + b2 + " => " + b3);
+
 		//
-		for (int i = 0; i != d.size(); ++i) {
-			System.out.print(Character.toString((char) d.readByte(i)));
+		for (int i = 0; i != b3.size(); ++i) {
+			System.out.print(Character.toString((char) b3.readByte(i)));
 		}
-	}
-}
-
-/**
- * Base class containing code comment to both ByteBlob and ByteBlob.Diff.
- *
- * @author David J. Pearce
- *
- */
-abstract class AbstractBlob implements Content.Blob {
-
-	@Override
-	public Diff writeByte(int index, byte b) {
-		return new Diff(this, new Replacement(index, 1, b));
-	}
-
-	@Override
-	public Diff writeShort(int offset, short value) {
-		// Convert value into bytes
-		byte b1 = (byte) ((value >> 8) & 0xFF);
-		byte b2 = (byte) (value & 0xFF);
-		return new Diff(this, new Replacement(offset, 2, b1, b2));
-	}
-
-	@Override
-	public Diff writeInt(int offset, int value) {
-		// Convert value into bytes
-		byte b1 = (byte) ((value >> 24) & 0xFF);
-		byte b2 = (byte) ((value >> 16) & 0xFF);
-		byte b3 = (byte) ((value >> 8) & 0xFF);
-		byte b4 = (byte) (value & 0xFF);
-		return new Diff(this, new Replacement(offset, 4, b1, b2, b3, b4));
-	}
-
-	@Override
-	public Diff writeBytes(int offset, byte... bytes) {
-		return new Diff(this, new Replacement(offset, bytes.length, bytes));
-	}
-
-	@Override
-	public Diff replaceBytes(int offset, int length, byte... bytes) {
-		return new Diff(this, new Replacement(offset, length, bytes));
-	}
-
-	@Override
-	public Diff insertByte(int offset, byte b) {
-		return new Diff(this, new Replacement(offset, 0, b));
-	}
-
-	@Override
-	public Diff insertShort(int offset, short value) {
-		// Convert value into bytes
-		byte b1 = (byte) ((value >> 8) & 0xFF);
-		byte b2 = (byte) (value & 0xFF);
-		return new Diff(this, new Replacement(offset, 0, b1, b2));
-	}
-
-	@Override
-	public Diff insertInt(int offset, int value) {
-		// Convert value into bytes
-		byte b1 = (byte) ((value >> 24) & 0xFF);
-		byte b2 = (byte) ((value >> 16) & 0xFF);
-		byte b3 = (byte) ((value >> 8) & 0xFF);
-		byte b4 = (byte) (value & 0xFF);
-		return new Diff(this, new Replacement(offset, 0, b1, b2, b3, b4));
-	}
-
-	@Override
-	public Diff insertBytes(int offset, byte... bytes) {
-		return new Diff(this, new Replacement(offset, 0, bytes));
-	}
-
-	@Override
-	public AbstractBlob compact(Content.Blob blob) {
-		// FIXME: am figuring out to do this.
-		throw new UnsupportedOperationException();
 	}
 }
 
@@ -402,7 +403,7 @@ abstract class AbstractBlob implements Content.Blob {
  * @author David J. Pearce
  *
  */
-class Diff extends AbstractBlob implements Content.Diff {
+final class Diff implements Content.Diff {
 	private final Content.Blob parent;
 	private final Replacement[] replacements;
 
@@ -552,6 +553,82 @@ class Diff extends AbstractBlob implements Content.Diff {
 		return result;
 	}
 
+
+	@Override
+	public Diff writeByte(int index, byte b) {
+		return replace(index, 1, b);
+	}
+
+	@Override
+	public Diff writeShort(int offset, short value) {
+		// Convert value into bytes
+		byte b1 = (byte) ((value >> 8) & 0xFF);
+		byte b2 = (byte) (value & 0xFF);
+		return replace(offset, 2, b1, b2);
+	}
+
+	@Override
+	public Diff writeInt(int offset, int value) {
+		// Convert value into bytes
+		byte b1 = (byte) ((value >> 24) & 0xFF);
+		byte b2 = (byte) ((value >> 16) & 0xFF);
+		byte b3 = (byte) ((value >> 8) & 0xFF);
+		byte b4 = (byte) (value & 0xFF);
+		return replace(offset, 4, b1, b2, b3, b4);
+	}
+
+	@Override
+	public Diff writeBytes(int offset, byte... bytes) {
+		return replace(offset, bytes.length, bytes);
+	}
+
+	@Override
+	public Diff replaceBytes(int offset, int length, byte... bytes) {
+		return replace(offset, length, bytes);
+	}
+
+	@Override
+	public Diff insertByte(int offset, byte b) {
+		return replace(offset, 0, b);
+	}
+
+	@Override
+	public Diff insertShort(int offset, short value) {
+		// Convert value into bytes
+		byte b1 = (byte) ((value >> 8) & 0xFF);
+		byte b2 = (byte) (value & 0xFF);
+		return replace(offset, 0, b1, b2);
+	}
+
+	@Override
+	public Diff insertInt(int offset, int value) {
+		// Convert value into bytes
+		byte b1 = (byte) ((value >> 24) & 0xFF);
+		byte b2 = (byte) ((value >> 16) & 0xFF);
+		byte b3 = (byte) ((value >> 8) & 0xFF);
+		byte b4 = (byte) (value & 0xFF);
+		return replace(offset, 0, b1, b2, b3, b4);
+	}
+
+	@Override
+	public Diff insertBytes(int offset, byte... bytes) {
+		return replace(offset, 0, bytes);
+	}
+
+	@Override
+	public Content.Blob merge(Content.Blob blob) {
+		if (blob == this || parent == blob) {
+			return this;
+		} else if (blob instanceof Diff) {
+			Diff d = (Diff) blob;
+			if (d.parent() == parent) {
+				Replacement[] rs = merge(replacements, d.replacements);
+				return new Diff(parent, rs);
+			}
+		}
+		throw new IllegalArgumentException("cannot merge blob");
+	}
+
 	@Override
 	public String toString() {
 		String r = "";
@@ -562,6 +639,107 @@ class Diff extends AbstractBlob implements Content.Diff {
 			}
 		}
 		return "{" + r + "}";
+	}
+
+	/**
+	 * Apply a new write onto this diff. The key challenge is that the offset of the
+	 * write is in terms of the resulting layout from this diff. This contrasts with
+	 * the replacements making up this diff, which are in terms of the layout of the
+	 * original blob. Therefore, we must account for this.
+	 *
+	 * @param offset
+	 * @param length
+	 * @param bytes
+	 * @return
+	 */
+	private Diff replace(int offset, int length, byte... bytes) {
+		// TODO: performance could be improved using a binary search. However, this
+		// requires altering the way in which replacements are represented to be in
+		// terms of the resulting layout rather than the original layout.
+		// Determine first element past write
+		int ith_offset = 0;
+		int ith_length = 0;
+		int ith_last = 0;
+		byte[] ith_bytes = null;
+		//
+		for(int i=0;i!=replacements.length;++i) {
+			Replacement ith = replacements[i];
+			// Determine replacement coordinates
+			ith_offset = ith.offset;
+			ith_length = ith.length;
+			ith_last = ith_offset + ith_length;
+			ith_bytes = ith.bytes;
+			//
+			final int last = offset + length;
+			// Check for overlaps
+			if(last <= ith_offset) {
+				if(last == ith_offset) {
+					// Merge
+					Replacement[] rs = Arrays.copyOf(replacements, replacements.length);
+					// Construct combined array
+					byte[] bs = ArrayUtils.append(bytes,ith_bytes);
+					// Combine both replacements together.
+					rs[i] = new Replacement(offset, length + ith_length, bs);
+					// Done
+					return new Diff(parent, rs);
+				} else {
+					Replacement r = new Replacement(offset, length, bytes);
+					// Insert
+					Replacement[] rs = ArrayUtils.insert(i, r, replacements);
+					// Done
+					return new Diff(parent, rs);
+				}
+			} else if(ith_last <= offset) {
+				// Continue
+			} else {
+				// At this point, conflict detected. First, determine how many replacements
+				// affected.
+				int j = i + 1;
+				if(j < replacements.length && last >= replacements[j].offset) {
+					// Multiple affected replacements which need to be merged into one.
+					j = j + 1;
+					while(j < replacements.length && last >= replacements[j].offset) {
+						j = j + 1;
+					}
+					//
+					throw new UnsupportedOperationException("IMPLEMENT ME!");
+				} else {
+					// Only one affected replacement, so existing one can be replaced.
+					int o = Math.min(offset, ith_offset);
+					int l = Math.max(last, ith_last);
+					int n = l - o;
+					byte[] bs = new byte[n];
+					// Apply first
+					System.arraycopy(ith_bytes, 0, bs, ith_offset - o, ith_bytes.length);
+					// Apply second
+					System.arraycopy(bytes, 0, bs, offset - o, bytes.length);
+					// Construct final replacement set.
+					Replacement[] rs = Arrays.copyOf(replacements, replacements.length);
+					rs[i] = new Replacement(o, n, bs);
+					// Done
+					return new Diff(parent, rs);
+				}
+			}
+			// Account for differences between before/after layouts
+			offset = offset - ith.diff();
+		}
+		// Append to end
+		if(ith_last == offset) {
+			// Merge
+			Replacement[] rs = Arrays.copyOf(replacements, replacements.length);
+			// Construct combined array
+			byte[] bs = ArrayUtils.append(ith_bytes,bytes);
+			// Combine both replacements together.
+			rs[replacements.length-1] = new Replacement(ith_offset, length + ith_length, bs);
+			// Done
+			return new Diff(parent, rs);
+		} else {
+			Replacement r = new Replacement(offset, length, bytes);
+			// Doesn't conflict so append on the end
+			Replacement[] rs = ArrayUtils.append(replacements, r);
+			// Done
+			return new Diff(parent, rs);
+		}
 	}
 
 	/**
@@ -583,79 +761,71 @@ class Diff extends AbstractBlob implements Content.Diff {
 	}
 
 	/**
-	 * Combine two sets of replacements together to form one. This is challenging
-	 * because the first is expressed in terms of the original layout, whilst the
-	 * latter expressed in the layout after the first is applied.
+	 * Combine two sets of (disjoint) replacements together to form one. All
+	 * replacements are assumed to be disjoint, otherwise we have an error.
 	 *
-	 * @param before
-	 * @param after
+	 * @param lhs
+	 * @param rhs
 	 * @return
 	 */
-	public static Replacement[] merge(Replacement[] before, Replacement[] after) {
-		// Optimistically assume no conflicts between replacements. If there are
-		// conflicts, then we'll need to trim this array at the end.
-		Replacement[] results = new Replacement[before.length + after.length];
+	private static Replacement[] merge(Replacement[] lhs, Replacement[] rhs) {
+		// Optimistically assume no merging of replacements will occurr between
+		// replacements. If there is some, then we'll need to trim this array at the
+		// end.
+		Replacement[] results = new Replacement[lhs.length + rhs.length];
 		//
-		int i = 0, j = 0, k = 0;
-		int delta = 0;
-		while (i < before.length && j < after.length) {
-			Replacement ith = before[i];
-			Replacement jth = after[j];
-			Replacement kth;
-			// FIXME: following calculations are broken because they are not properly
-			// account for effect of ith.bytes.length.
-			int ith_offset = ith.offset;
-			int ith_last = ith_offset + ith.length;
-			// Account for change in layout
-			int jth_offset = jth.offset + delta;
-			int jth_last = jth_offset + jth.length;
-			// Decide which applies first
-			if (ith_last < jth_offset) {
-				// ith completely disjoint
-				kth = ith;
-				// update delta
-				delta += ith.diff();
-				// Shift along
-				i = i + 1;
-			} else if (jth_last < ith_offset) {
-				// jth completely disjoint
-				kth = translate(jth, delta);
-				// Shift along
-				j = j + 1;
+		int l = 0, r = 0, k = 0;
+		//
+		while(l < lhs.length && r < rhs.length) {
+			Replacement lth = lhs[l];
+			Replacement rth = rhs[r];
+			//
+			int lth_offset = lth.offset;
+			int rth_offset = rth.offset;
+			int lth_last = lth_offset + lth.length;
+			int rth_last = rth_offset + rth.length;
+			//
+			if(lth_last <= rth_offset) {
+				if(lth_last == rth_offset) {
+					// Can merge!
+					byte[] bytes = ArrayUtils.append(lth.bytes, rth.bytes);
+					results[k++] = new Replacement(lth_offset,lth.length + rth.length,bytes);
+					l = l + 1;
+					r = r + 1;
+				} else {
+					// lth first
+					results[k++] = lth;
+					l = l + 1;
+				}
+			} else if(rth_last <= lth_offset) {
+				if(rth_last == lth_offset) {
+					// Can merge!
+					byte[] bytes = ArrayUtils.append(rth.bytes, lth.bytes);
+					results[k++] = new Replacement(rth_offset,lth.length + rth.length,bytes);
+					l = l + 1;
+					r = r + 1;
+				} else {
+					// rth first
+					results[k++] = rth;
+					r = r + 1;
+				}
 			} else {
-				kth = merge(ith, jth, delta);
-				// Shift along
-				i = i + 1;
-				j = j + 1;
+				// Merge!
+				throw new IllegalArgumentException("Cannot merge conflicting replacements");
 			}
-			// Construct kth
-			results[k++] = kth;
 		}
-		// Trim array to account for merges.
-		return ArrayUtils.removeAll(results, null);
-	}
-
-	/**
-	 * Translate a given replacement by a given delta.
-	 *
-	 * @param jth
-	 * @param delta
-	 * @return
-	 */
-	private static Replacement translate(Replacement jth, int delta) {
-		return (delta == 0) ? jth : new Replacement(jth.offset + delta, jth.length, jth.bytes);
-	}
-
-	/**
-	 * Merge before and after replacements assuming a given delta between them.
-	 *
-	 * @param ith
-	 * @param jth
-	 * @param delta
-	 * @return
-	 */
-	private static Replacement merge(Replacement ith, Replacement jth, int delta) {
-
+		// Copy any remaining segments
+		if(l < lhs.length) {
+			System.arraycopy(lhs, l, results, k, lhs.length - l);
+		} else if(r < rhs.length) {
+			System.arraycopy(rhs, r, results, k, rhs.length - r);
+		}
+		// Finally, sanity check for merged elements
+		if(k < results.length) {
+			results = Arrays.copyOf(results, k);
+		}
+		//
+		return results;
 	}
 }
 
