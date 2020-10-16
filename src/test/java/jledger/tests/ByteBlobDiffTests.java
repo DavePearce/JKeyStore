@@ -345,7 +345,7 @@ public class ByteBlobDiffTests {
 		Content.Blob v3 = v2.writeBytes(4, (byte) '0', (byte) '_');
 		assertArrayEquals("Hello WORLld".getBytes(),v2.readAll());
 		assertArrayEquals("Hell0_WORLld".getBytes(),v3.readAll());
-		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff)v3).parent() == v1);
+		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).parent() == v1);
 		assertTrue((v3 instanceof Content.Diff) && ((Content.Diff) v3).count() == 1);
 	}
 
