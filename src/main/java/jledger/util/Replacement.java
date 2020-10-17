@@ -59,8 +59,8 @@ import jledger.core.Content;
  * Here, we have a sequence of two replacements. We assume replacements in a
  * sequence do not overlap (including not adjacent) and are sorted. We also
  * assume that the starting offset for each replacement is in terms of the
- * <i>final</i> array. Thus, the above is encoded as the sequence
- * <code>(2;4;"llo"),(7;2;"OR")</code>.
+ * <i>final</i> array (reading left-to-right). Thus, the above is encoded as the
+ * sequence <code>(2;4;"llo"),(7;2;"OR")</code>.
  * </p>
  *
  * @author David J. Pearce
@@ -75,7 +75,6 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 * Length of region in the original sequence being replaced.
 	 */
 	final int length;
-
 	/**
 	 * Sequence which replaced the region from the original sequence.
 	 */
@@ -104,13 +103,19 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 		return length;
 	}
 
-	public int last() {
+	/**
+	 * Get the first index beyond this replacement in the final array.
+	 * 
+	 * @return
+	 */
+	public int end() {
 		return offset + bytes.length;
 	}
 
 	/**
-	 * Calculate the overall change in length of the original sequence resulting
-	 * from this delta. Thus,
+	 * Calculate the overall change in length of the original array resulting from
+	 * this delta. If this replaced sequence is larger than the original, this delta
+	 * is positive; Whilst, if it is smaller, then it is negative.
 	 *
 	 * @return
 	 */
@@ -176,16 +181,47 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	}
 	
 	/**
-	 * Apply a new write onto this diff.
+	 * <p>
+	 * Write a new replacement on top of an existing replacement sequence. This may
+	 * result in bytes from the original sequence being overwritten. It may also
+	 * result in one or more replacements from the original sequence being replaced.
+	 * As an example, consider the following scenario:
+	 * </p>
 	 * 
-	 * The key challenge is that the offset of the write is in terms of the
-	 * resulting layout from this diff. This contrasts with the replacements making
-	 * up this diff, which are in terms of the layout of the original blob.
-	 * Therefore, we must account for this.
+	 * <pre>
+	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 *   |X|X| |X|X|X| |X|X| |X|X|X|
+	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 *   | | |Y|Y|Y|Y|Y|Y| | | | | |
+	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 *    0 1 2 3 4 5 6 7 8 9 A B C
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, we have four replacements in the original sequence (indicated by
+	 * <code>X</code>) of which three are affected by the new write(indicated by
+	 * <code>Y</code>). The results in the following updated replacement sequence:
+	 * </p>
+	 * 
+	 * <pre>
+	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 *   |X|X|Y|Y|Y|Y|Y|Y|X| |X|X|X|
+	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+
+	 *    0 1 2 3 4 5 6 7 8 9 A B C
+	 * </pre>
+	 * 
+	 * <p>
+	 * This is now a sequence of only <i>two</i> replacements as the new write
+	 * resulted in the first three of the original sequence being merged together
+	 * into a single replacement. Furthermore, we see that some data from the
+	 * original sequence is lost completely as it was overwritten (i.e. bytes
+	 * 3,4,5,7 from the original sequence).
+	 * </p>
 	 *
-	 * @param offset
-	 * @param length
-	 * @param bytes
+	 * @param replacements The Replacement sequence.
+	 * @param offset       Starting offset of the replacement.
+	 * @param length       Length of the replacement.
+	 * @param bytes        Bytes used for replacement.
 	 * @return
 	 */
 	public static Replacement[] write(Replacement[] replacements, int offset, int length, byte... bytes) {
@@ -210,7 +246,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	private static int findLowestAffected(Replacement[] replacements, int offset, int length, byte[] bytes) {
 		// TODO: this could employ binary search
 		int i = 0;
-		while(i < replacements.length && replacements[i].last() < offset) {
+		while(i < replacements.length && replacements[i].end() < offset) {
 			i = i + 1;
 		}
 		return i;
@@ -296,9 +332,11 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 		// Combine both replacements together.
 		int off = Math.min(ith.offset, r.offset);
 		int last = Math.max(ith.offset + ith.bytes.length, r.offset + r.bytes.length);
-		int len = ith.length + (ith.offset - off) + (last - ith.last());
+		int len = ith.length + (ith.offset - off) + (last - ith.end());
 		byte[] bs = new byte[last - off];
-		// TODO: this copy is inefficient in some cases
+		// TODO: this copy is inefficient in some cases as we don't need to copy all the
+		// bytes of the original sequence. For example, if the original sequence is
+		// completely overwritten then we don't need to copy anything!
 		System.arraycopy(ith.bytes, 0, bs, ith.offset - off, ith.bytes.length);
 		System.arraycopy(r.bytes, 0, bs, r.offset - off, r.bytes.length);
 		rs[index] = new Replacement(off, len, bs);
@@ -375,7 +413,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *                     replacements array
 	 * @return
 	 */
-	public static Replacement[] replace(int i, int j, Replacement[] replacements, Replacement r) {
+	private static Replacement[] replace(int i, int j, Replacement[] replacements, Replacement r) {
 		Replacement ith = replacements[i];
 		Replacement jth = replacements[j];
 		// Determine starting offset
@@ -383,7 +421,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 		// Determine last
 		int last = Math.max(jth.offset + jth.bytes.length, r.offset + r.bytes.length);
 		// Determine length of affect region in original array
-		int len = ;
+		int len =0 ; // FIXME: broken!
 		// Construct new replacement
 		byte[] bs = new byte[last - offset];
 		// TODO: following two copies inefficient in many cases
