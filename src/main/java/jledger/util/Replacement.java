@@ -39,7 +39,7 @@ import jledger.core.Content;
  * A <i>replacement sequence</i> is used to implement <i>diffs</i> and have a
  * specific interpretation. Consider the following:
  * </p>
- * 
+ *
  * <pre>
  *  0 1 2 3 4 5 6 7 8 9 A B
  * +-+-+-+-+-+-+-+-+-+-+-+-+
@@ -54,7 +54,7 @@ import jledger.core.Content;
  *     +-+-+-+-+-+-+-+
  *  0 1 2 3 4 5 6 7 8 9 A B
  * </pre>
- * 
+ *
  * <p>
  * Here, we have a sequence of two replacements. We assume replacements in a
  * sequence do not overlap (including not adjacent) and are sorted. We also
@@ -105,7 +105,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 
 	/**
 	 * Get the first index beyond this replacement in the final array.
-	 * 
+	 *
 	 * @return
 	 */
 	public int end() {
@@ -113,13 +113,14 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	}
 
 	/**
-	 * Calculate the overall change in length of the original array resulting from
-	 * this delta. If this replaced sequence is larger than the original, this delta
-	 * is positive; Whilst, if it is smaller, then it is negative.
+	 * Calculate the overall change in length (i.e. delta) of the original array
+	 * resulting from this delta. If the replaced sequence is larger than the
+	 * original, this delta is positive; Whilst, if it is smaller, then it is
+	 * negative, etc.
 	 *
 	 * @return
 	 */
-	public int diff() {
+	public int delta() {
 		return bytes.length - length;
 	}
 
@@ -179,7 +180,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	public String toString() {
 		return "(" + offset + ";" + length + ";" + Arrays.toString(bytes) + ")";
 	}
-	
+
 	/**
 	 * <p>
 	 * Write a new replacement on top of an existing replacement sequence. This may
@@ -187,7 +188,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 * result in one or more replacements from the original sequence being replaced.
 	 * As an example, consider the following scenario:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 *   |X|X| |X|X|X| |X|X| |X|X|X|
@@ -196,20 +197,20 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 *    0 1 2 3 4 5 6 7 8 9 A B C
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, we have four replacements in the original sequence (indicated by
 	 * <code>X</code>) of which three are affected by the new write(indicated by
 	 * <code>Y</code>). The results in the following updated replacement sequence:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 *   |X|X|Y|Y|Y|Y|Y|Y|X| |X|X|X|
 	 *   +-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 *    0 1 2 3 4 5 6 7 8 9 A B C
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * This is now a sequence of only <i>two</i> replacements as the new write
 	 * resulted in the first three of the original sequence being merged together
@@ -225,36 +226,47 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 * @return
 	 */
 	public static Replacement[] write(Replacement[] replacements, int offset, int length, byte... bytes) {
-		System.out.println(
-				"REPLACE(" + offset + "," + length + "," + bytes.length + ") <= " + Arrays.toString(replacements));
-		// Determine lower affected range
+		final int last = offset + length;
+		// Determine lowest affected replacement
 		int i = findLowestAffected(replacements, offset,length,bytes);
-		int j = findGreatestAffected(i, replacements, offset, length, bytes);
+		// Scan forward to greatest effected replacement
+		int j = i;
+		while(j < replacements.length && replacements[j].offset() <= last) {
+			j = j + 1;
+		}
+		j = j - 1;
 		//
-		if (i == j) {
+		if (j < i) {
 			// Insert
 			return ArrayUtils.insert(i, new Replacement(offset, length, bytes), replacements);
-		} else if (i == (j - 1)) {
+		} else if (i == j) {
 			// single merge
 			return write(i, replacements, new Replacement(offset, length, bytes));
 		} else {
 			// multi merge
-			return replace(i, j, replacements, new Replacement(offset, length, bytes));
+			return write(i, j, replacements, new Replacement(offset, length, bytes));
 		}
 	}
 
+	/**
+	 * <p>
+	 * Find the lowest affected replacement in a replacement sequence. This then
+	 * identifies the "affect region" of replacements. An existing replacement is
+	 * affected if either: it overlaps with the new replacement; or it is adjacent
+	 * to it. Since replacements are stored in sorted order, we can employ a binary
+	 * search here for efficiency.
+	 * </p>
+	 *
+	 * @param replacements
+	 * @param offset
+	 * @param length
+	 * @param bytes
+	 * @return
+	 */
 	private static int findLowestAffected(Replacement[] replacements, int offset, int length, byte[] bytes) {
-		// TODO: this could employ binary search
+		// TODO: actually employ binary search!
 		int i = 0;
 		while(i < replacements.length && replacements[i].end() < offset) {
-			i = i + 1;
-		}
-		return i;
-	}
-
-	private static int findGreatestAffected(int i, Replacement[] replacements, int offset, int length, byte[] bytes) {
-		int last = offset + length;
-		while(i < replacements.length && replacements[i].offset() <= last) {
 			i = i + 1;
 		}
 		return i;
@@ -270,7 +282,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *
 	 * <ol>
 	 * <li>Replacement within:
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 *   | |X|X|X|X|X| |  | |X|X|X|X|X| |
@@ -278,12 +290,12 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   | | |Y|Y|Y| | |  | | |Y|Y|Y|Y| |
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 * </pre>
-	 * 
+	 *
 	 * </li>
-	 * 
-	 * 
+	 *
+	 *
 	 * <li>Replacement overwrites:
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 *   | | | |X|X| | |  | | |X|X|X| | |
@@ -291,11 +303,11 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   | | |Y|Y|Y|Y| |  | | |Y|Y|Y|Y| |
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 * </pre>
-	 * 
+	 *
 	 * </li>
-	 * 
+	 *
 	 * <li>Partial conflict:
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 *   | | |X|X|X| | |  | | |X|X|X|X|X|
@@ -303,11 +315,11 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   | | | |Y|Y|Y| |  | |Y|Y|Y|Y| | |
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 * </pre>
-	 * 
+	 *
 	 * </li>
-	 * 
+	 *
 	 * <li>Adjacent writes:
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 *   | | |X|X| | | |  | | | | |X|X|X|
@@ -315,10 +327,10 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   | | | | |Y|Y| |  | | |Y|Y| | | |
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 * </pre>
-	 * 
+	 *
 	 * </li>
 	 * </ol>
-	 * 
+	 *
 	 * @param index        Index of replacement being overwritten in replacements
 	 *                     array.
 	 * @param replacements Array of replacements
@@ -327,19 +339,24 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 * @return
 	 */
 	private static Replacement[] write(int index, Replacement[] replacements, Replacement r) {
-		Replacement ith = replacements[index];
-		Replacement[] rs = Arrays.copyOf(replacements, replacements.length);
-		// Combine both replacements together.
-		int off = Math.min(ith.offset, r.offset);
-		int last = Math.max(ith.offset + ith.bytes.length, r.offset + r.bytes.length);
-		int len = ith.length + (ith.offset - off) + (last - ith.end());
-		byte[] bs = new byte[last - off];
+		final Replacement ith = replacements[index];
+		// Construct new replacement sequence (as copy of original)
+		final Replacement[] rs = Arrays.copyOf(replacements, replacements.length);
+		// Determine start of replaced region (in final layout).
+		int offset = Math.min(ith.offset, r.offset);
+		// Determine end of replaced region (in final layout).
+		int end = Math.max(ith.offset + ith.bytes.length, r.offset + r.bytes.length);
+		// Determine length of affected region (in original layout). This includes the
+		// entire length of the original replacement, plus any additional bytes from the
+		// new replacement which occur either side of the original.
+		int len = (end - offset) - ith.delta();
+		byte[] bs = new byte[end - offset];
 		// TODO: this copy is inefficient in some cases as we don't need to copy all the
 		// bytes of the original sequence. For example, if the original sequence is
 		// completely overwritten then we don't need to copy anything!
-		System.arraycopy(ith.bytes, 0, bs, ith.offset - off, ith.bytes.length);
-		System.arraycopy(r.bytes, 0, bs, r.offset - off, r.bytes.length);
-		rs[index] = new Replacement(off, len, bs);
+		System.arraycopy(ith.bytes, 0, bs, ith.offset - offset, ith.bytes.length);
+		System.arraycopy(r.bytes, 0, bs, r.offset - offset, r.bytes.length);
+		rs[index] = new Replacement(offset, len, bs);
 		// Done
 		return rs;
 	}
@@ -357,7 +374,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *
 	 * <ol>
 	 * <li>Replacement within:
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+    +-+-+-+-+-+-+-+
 	 *   | |X|X| |X|X| |    | |X| |X| |X|X|
@@ -365,12 +382,12 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   | | |Y|Y|Y| | |    | | |Y|Y|Y|Y|Y|
 	 *   +-+-+-+-+-+-+-+    +-+-+-+-+-+-+-+
 	 * </pre>
-	 * 
+	 *
 	 * </li>
-	 * 
-	 * 
+	 *
+	 *
 	 * <li>Replacement overwrites:
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 *   | | |X|X| |X| |  | |X| |X|X| | |
@@ -378,11 +395,11 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   | |Y|Y|Y|Y|Y|Y|  | |Y|Y|Y|Y|Y| |
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 * </pre>
-	 * 
+	 *
 	 * </li>
-	 * 
+	 *
 	 * <li>Partial conflict:
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 *   | |X|X| |X|X| |  | | |X|X| | |X|
@@ -390,11 +407,11 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   | | |Y|Y|Y|Y| |  | |Y|Y|Y|Y|Y| |
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 * </pre>
-	 * 
+	 *
 	 * </li>
-	 * 
+	 *
 	 * <li>Adjacent writes:
-	 * 
+	 *
 	 * <pre>
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 *   | |X|X|X| | |X|  |X|X| | |X|X|X|
@@ -402,28 +419,28 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   | | | | |Y|Y| |  | |Y|Y|Y| | | |
 	 *   +-+-+-+-+-+-+-+  +-+-+-+-+-+-+-+
 	 * </pre>
-	 * 
+	 *
 	 * </li>
 	 * </ol>
-	 * 
+	 *
 	 * @param i            Starting index of affected region of replacements.
-	 * @param j            First index outside affected region of replacements.
+	 * @param j            Final index of affected region of replacements.
 	 * @param replacements Array of replacements
 	 * @param r            Replacement overwriting replacement and index in
 	 *                     replacements array
 	 * @return
 	 */
-	private static Replacement[] replace(int i, int j, Replacement[] replacements, Replacement r) {
+	private static Replacement[] write(int i, int j, Replacement[] replacements, Replacement r) {
 		Replacement ith = replacements[i];
 		Replacement jth = replacements[j];
 		// Determine starting offset
 		int offset = Math.min(ith.offset, r.offset);
 		// Determine last
-		int last = Math.max(jth.offset + jth.bytes.length, r.offset + r.bytes.length);
-		// Determine length of affect region in original array
-		int len =0 ; // FIXME: broken!
+		int end = Math.max(jth.offset + jth.bytes.length, r.offset + r.bytes.length);
+		// Determine length of affected region in original array
+		int len = (end - offset) - delta(i,j,replacements);
 		// Construct new replacement
-		byte[] bs = new byte[last - offset];
+		byte[] bs = new byte[end - offset];
 		// TODO: following two copies inefficient in many cases
 		// Write first affected replacement
 		System.arraycopy(ith.bytes, 0, bs, ith.offset - offset, ith.bytes.length);
@@ -432,13 +449,29 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 		// Write replacement data
 		System.arraycopy(r.bytes, 0, bs, r.offset - offset, r.bytes.length);
 		// Check invariant which must hold to prevent original array being returned from remove.
-		assert (i+1) != j;
+		assert (i+1) >= j;
 		// Replace all elements between i and j with single replacement
 		Replacement[] rs = ArrayUtils.remove(i+1,j,replacements);
-		// Put merged replacement in place 
+		// Put merged replacement in place
 		rs[i] = new Replacement(offset, len, bs);
 		// Done
 		return rs;
 	}
 
+	/**
+	 * Compute the "delta" between the original array size and the final array size,
+	 * as caused by a given range of replacements.
+	 *
+	 * @param i
+	 * @param j
+	 * @param replacements
+	 * @return
+	 */
+	private static int delta(int i, int j, Replacement[] replacements) {
+		int d = 0;
+		for (; i <= j; ++i) {
+			d += replacements[i].delta();
+		}
+		return d;
+	}
 }

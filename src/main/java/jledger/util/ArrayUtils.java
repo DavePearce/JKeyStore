@@ -157,12 +157,11 @@ public class ArrayUtils {
 			return nItems;
 		}
 	}
-	
+
 	/**
-	 * Remove all items between <code>i</code> (inclusive) and <code>j</code>
-	 * (exclusive) from a given array. This is guaranteed to return a new array when
-	 * <code>i!=j</code>.
-	 * 
+	 * Remove all items between <code>i</code> and <code>j</code> (inclusive) from a
+	 * given array. This is guaranteed to return a new array when <code>i!=j</code>.
+	 *
 	 * @param <T>
 	 * @param i
 	 * @param j
@@ -170,7 +169,8 @@ public class ArrayUtils {
 	 * @return
 	 */
 	public static <T> T[] remove(int i, int j, T[] items) {
-		if(i == j) {
+		j = j + 1;
+		if(j <= i) {
 			return items;
 		} else {
 			final int n = j - i;

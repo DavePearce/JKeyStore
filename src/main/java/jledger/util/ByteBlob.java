@@ -435,7 +435,7 @@ final class Diff implements Content.Diff {
 		for (int i = 0; i != replacements.length; ++i) {
 			Replacement ith = replacements[i];
 			// Account for delta changes
-			diff += ith.diff();
+			diff += ith.delta();
 		}
 		//
 		return size + diff;
@@ -457,7 +457,7 @@ final class Diff implements Content.Diff {
 			} else if (index < (ith.offset + ith.bytes.length)) {
 				return ith.bytes[index - ith.offset];
 			} else {
-				diff = diff + ith.diff();
+				diff = diff + ith.delta();
 			}
 		}
 		return parent.readByte(index);
