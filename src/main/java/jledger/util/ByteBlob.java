@@ -495,7 +495,7 @@ final class Diff implements Content.Diff {
 
 	@Override
 	public void readBytes(int index, int length, byte[] dest, int destStart) {
-		// FIXME: performance could be improved!!
+		// FIXME: performance could be improved using binary search!!
 		for (int i = 0; i < length; ++i) {
 			dest[destStart + i] = readByte(index + i);
 		}
@@ -553,7 +553,8 @@ final class Diff implements Content.Diff {
 
 	@Override
 	public Diff writeByte(int index, byte b) {
-		return replace(index, 1, b);
+		Replacement[] rs = Replacement.write(replacements, index, 1, b);
+		return new Diff(parent, rs);
 	}
 
 	@Override
@@ -561,7 +562,8 @@ final class Diff implements Content.Diff {
 		// Convert value into bytes
 		byte b1 = (byte) ((value >> 8) & 0xFF);
 		byte b2 = (byte) (value & 0xFF);
-		return replace(offset, 2, b1, b2);
+		Replacement[] rs = Replacement.write(replacements, offset, 2, b1, b2);
+		return new Diff(parent, rs);
 	}
 
 	@Override
@@ -571,22 +573,26 @@ final class Diff implements Content.Diff {
 		byte b2 = (byte) ((value >> 16) & 0xFF);
 		byte b3 = (byte) ((value >> 8) & 0xFF);
 		byte b4 = (byte) (value & 0xFF);
-		return replace(offset, 4, b1, b2, b3, b4);
+		Replacement[] rs = Replacement.write(replacements, offset, 4, b1, b2, b3, b4);
+		return new Diff(parent, rs);
 	}
 
 	@Override
 	public Diff writeBytes(int offset, byte... bytes) {
-		return replace(offset, bytes.length, bytes);
+		Replacement[] rs = Replacement.write(replacements, offset, bytes.length, bytes);
+		return new Diff(parent, rs);
 	}
 
 	@Override
 	public Diff replaceBytes(int offset, int length, byte... bytes) {
-		return replace(offset, length, bytes);
+		Replacement[] rs = Replacement.write(replacements, offset, length, bytes);
+		return new Diff(parent, rs);
 	}
 
 	@Override
 	public Diff insertByte(int offset, byte b) {
-		return replace(offset, 0, b);
+		Replacement[] rs = Replacement.write(replacements, offset, 0, b);
+		return new Diff(parent, rs);
 	}
 
 	@Override
@@ -594,7 +600,8 @@ final class Diff implements Content.Diff {
 		// Convert value into bytes
 		byte b1 = (byte) ((value >> 8) & 0xFF);
 		byte b2 = (byte) (value & 0xFF);
-		return replace(offset, 0, b1, b2);
+		Replacement[] rs = Replacement.write(replacements, offset, 0, b1, b2);
+		return new Diff(parent, rs);
 	}
 
 	@Override
@@ -604,12 +611,14 @@ final class Diff implements Content.Diff {
 		byte b2 = (byte) ((value >> 16) & 0xFF);
 		byte b3 = (byte) ((value >> 8) & 0xFF);
 		byte b4 = (byte) (value & 0xFF);
-		return replace(offset, 0, b1, b2, b3, b4);
+		Replacement[] rs = Replacement.write(replacements, offset, 0, b1, b2, b3, b4);
+		return new Diff(parent, rs);
 	}
 
 	@Override
 	public Diff insertBytes(int offset, byte... bytes) {
-		return replace(offset, 0, bytes);
+		Replacement[] rs = Replacement.write(replacements, offset, 0, bytes);
+		return new Diff(parent, rs);
 	}
 
 	@Override
@@ -638,124 +647,6 @@ final class Diff implements Content.Diff {
 		return "{" + r + "}";
 	}
 
-	/**
-	 * Apply a new write onto this diff. The key challenge is that the offset of the
-	 * write is in terms of the resulting layout from this diff. This contrasts with
-	 * the replacements making up this diff, which are in terms of the layout of the
-	 * original blob. Therefore, we must account for this.
-	 *
-	 * @param offset
-	 * @param length
-	 * @param bytes
-	 * @return
-	 */
-	private Diff replace(int offset, int length, byte... bytes) {
-		System.out.println(
-				"REPLACE(" + offset + "," + length + "," + bytes.length + ") <= " + Arrays.toString(replacements));
-		// Determine lower affected range
-		int i = findLowestAffected(offset,length,bytes);
-		int j = findGreatestAffected(i,offset,length,bytes);
-		//
-		if(i == j) {
-			// Insert
-			return insert(i,  new Replacement(offset, length, bytes));
-		} else if(i == (j-1)) {
-			// single merge
-			return replace(i, new Replacement(offset, length, bytes));
-		} else {
-			// multi merge
-			return replace(i, j, new Replacement(offset, length, bytes));
-		}
-	}
-
-	private int findLowestAffected(int offset, int length, byte[] bytes) {
-		// TODO: this could employ binary search
-		int i = 0;
-		while(i < replacements.length && replacements[i].last() < offset) {
-			i = i + 1;
-		}
-		return i;
-	}
-
-	public int findGreatestAffected(int i, int offset, int length, byte[] bytes) {
-		int last = offset + length;
-		while(i < replacements.length && replacements[i].offset() <= last) {
-			i = i + 1;
-		}
-		return i;
-	}
-
-	public static boolean below(Replacement r, int offset, int length) {
-		int r_last = r.offset + r.bytes.length;
-		return r_last < offset;
-	}
-
-	public static boolean above(Replacement r, int offset, int length) {
-		int last = offset + length;
-		return last < r.offset;
-	}
-	/**
-	 * Insert a new replacement at a given position within the replacements array.
-	 *
-	 * @param index
-	 * @param replacement
-	 * @return
-	 */
-	private Diff insert(int index, Replacement replacement) {
-		Replacement[] rs = ArrayUtils.insert(index, replacement, replacements);
-		// Done
-		return new Diff(parent, rs);
-	}
-
-	/**
-	 * Merge the replacement at a given position within the replacements array with
-	 * another replacement.
-	 *
-	 * @param index
-	 * @param o
-	 * @param l
-	 * @param bytes
-	 * @return
-	 */
-	private Diff replace(int index, Replacement r) {
-		Replacement ith = replacements[index];
-		Replacement[] rs = Arrays.copyOf(replacements, replacements.length);
-		// Combine both replacements together.
-		System.out.println("MERGING: " + this + " <> " + r);
-		int off = Math.min(ith.offset, r.offset);
-		int last = Math.max(ith.offset + ith.bytes.length, r.offset + r.bytes.length);
-		int len = ith.length + (ith.offset - off) + (last - ith.last());
-		byte[] bs = new byte[last - off];
-		// TODO: this copy is inefficient in some cases
-		System.arraycopy(ith.bytes, 0, bs, ith.offset - off, ith.bytes.length);
-		System.arraycopy(r.bytes, 0, bs, r.offset - off, r.bytes.length);
-		rs[index] = new Replacement(off, len, bs);
-		System.out.println("GOT: " + rs[index]);
-		// Done
-		return new Diff(parent, rs);
-	}
-
-	private Diff replace(int i, int j, Replacement r) {
-		Replacement ith = replacements[i];
-		Replacement jth = replacements[j];
-		// Determine starting offset
-		int offset = Math.min(ith.offset, r.offset);
-		// Determine last
-		int last = Math.max(jth.offset + jth.bytes.length, r.offset + r.bytes.length);
-		// Determine length of affect region in original array
-		int len = ;
-		// Construct new replacement
-		byte[] bs = new byte[last - offset];
-		// TODO: following two copies inefficient in many cases
-		// Write first affected replacement
-		System.arraycopy(ith.bytes, 0, bs, ith.offset - offset, ith.bytes.length);
-		// Write second affected replacement
-		System.arraycopy(jth.bytes, 0, bs, jth.offset - offset, jth.bytes.length);
-		// Write replacement data
-		System.arraycopy(r.bytes, 0, bs, r.offset - offset, r.bytes.length);
-		// Replace all elements between i and j with single replacement
-
-	}
 
 	/**
 	 * Check whether a given array of delta's are overlapping or not.
@@ -844,143 +735,4 @@ final class Diff implements Content.Diff {
 	}
 }
 
-/**
- * <p>
- * Represents an atomic replacement in the original array. Specifically, a
- * region in the original array is replaced by a new sequence of bytes. Observe
- * that this region may be larger or smaller than the original region. The
- * following illustrates:
- * </p>
- *
- * <pre>
- *  0 1 2 3 4 5 6 7 8 9 A B
- * +-+-+-+-+-+-+-+-+-+-+-+-+
- * |H|e|L|L|L|O| |W|o|r|l|d|
- * +-+-+-+-+-+-+-+-+-+-+-+-+
- *     | : : : |
- *     +-------+
- *         |
- *        \|/
- *      +-+-+-+
- *      |l|l|o|
- *      +-+-+-+
- * </pre>
- *
- * <p>
- * The above illustrates the region "LLLO" from the original sequence being
- * replaced by "llo". Thus, after applying the delta, we have the string "Hello
- * World".
- * </p>
- *
- * @author David J. Pearce
- *
- */
-class Replacement implements Content.Replacement, Comparable<Replacement> {
-	/**
-	 * Offset in the original sequence where region being replaced begins.
-	 */
-	protected final int offset;
-	/**
-	 * Length of region in the original sequence being replaced.
-	 */
-	protected final int length;
 
-	/**
-	 * Sequence which replaced the region from the original sequence.
-	 */
-	protected final byte[] bytes;
-
-	public Replacement(int offset, int length, byte... bytes) {
-		if (offset < 0) {
-			throw new IllegalArgumentException("negative offset");
-		} else if (length < 0) {
-			throw new IllegalArgumentException("negative length");
-		} else if (bytes == null) {
-			throw new IllegalArgumentException("null bytes");
-		}
-		this.offset = offset;
-		this.length = length;
-		this.bytes = bytes;
-	}
-
-	@Override
-	public int offset() {
-		return offset;
-	}
-
-	@Override
-	public int size() {
-		return length;
-	}
-
-	public int last() {
-		return offset + bytes.length;
-	}
-
-	/**
-	 * Calculate the overall change in length of the original sequence resulting
-	 * from this delta. Thus,
-	 *
-	 * @return
-	 */
-	public int diff() {
-		return bytes.length - length;
-	}
-
-	/**
-	 * Get the bytes which replace the region in the original array.
-	 *
-	 * @return
-	 */
-	@Override
-	public byte[] bytes() {
-		return bytes;
-	}
-
-	/**
-	 * Check this delta is disjoint with another (i.e. they don't overlap).
-	 *
-	 * @param other
-	 * @return
-	 */
-	public boolean disjoint(Replacement other) {
-		int end = (offset + bytes.length) - 1;
-		int oend = (other.offset + other.bytes.length) - 1;
-		return (end < other.offset) || (oend < offset);
-	}
-
-	/**
-	 * Check this delta is disjoint with another (i.e. they don't overlap).
-	 *
-	 * @param other
-	 * @return
-	 */
-	public boolean disjoint(int other_offset, int other_length) {
-		int end = (offset + length) - 1;
-		int oend = (other_offset + other_length) - 1;
-		return (end < other_offset) || (oend < offset);
-	}
-
-	@Override
-	public int compareTo(Replacement o) {
-		if (offset < o.offset) {
-			return -1;
-		} else if (offset > o.offset) {
-			return 1;
-		}
-		int end = (offset + bytes.length) - 1;
-		int oend = (o.offset + o.bytes.length) - 1;
-		if (end < oend) {
-			return -1;
-		} else if (end > oend) {
-			return 1;
-		} else {
-			return 0;
-		}
-	}
-
-	@Override
-	public String toString() {
-		return "(" + offset + ";" + length + ";" + Arrays.toString(bytes) + ")";
-	}
-}

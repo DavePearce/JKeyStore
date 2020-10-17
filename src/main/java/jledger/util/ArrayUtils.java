@@ -157,4 +157,26 @@ public class ArrayUtils {
 			return nItems;
 		}
 	}
+	
+	/**
+	 * Remove all items between <code>i</code> (inclusive) and <code>j</code>
+	 * (exclusive) from a given array. This is guaranteed to return a new array when
+	 * <code>i!=j</code>.
+	 * 
+	 * @param <T>
+	 * @param i
+	 * @param j
+	 * @param items
+	 * @return
+	 */
+	public static <T> T[] remove(int i, int j, T[] items) {
+		if(i == j) {
+			return items;
+		} else {
+			final int n = j - i;
+			T[] nitems = Arrays.copyOf(items, items.length - n);
+			System.arraycopy(items, j, nitems, i, items.length - j);
+			return nitems;
+		}
+	}
 }
