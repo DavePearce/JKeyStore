@@ -448,19 +448,18 @@ final class Diff implements Content.Diff {
 
 	@Override
 	public byte readByte(int index) {
-		// TODO: could be more efficient using a binary search.
-		int diff = 0;
-		for (int i = 0; i != replacements.length; ++i) {
+		int i = Replacement.findEnclosing(replacements, index);
+		//
+		if(i >= 0) {
+			// Matched enclosing replacement.
 			Replacement ith = replacements[i];
-			if (ith.offset > index) {
-				return parent.readByte(index - diff);
-			} else if (index < (ith.offset + ith.bytes.length)) {
-				return ith.bytes[index - ith.offset];
-			} else {
-				diff = diff + ith.delta();
-			}
+			return ith.bytes[index - ith.offset];
+		} else {
+			// No enclosing replacement
+			int delta = Replacement.delta(0,-i - 1,replacements);
+			// Read from parent.
+			return parent.readByte(index - delta);
 		}
-		return parent.readByte(index);
 	}
 
 	@Override

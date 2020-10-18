@@ -228,7 +228,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	public static Replacement[] write(Replacement[] replacements, int offset, int length, byte... bytes) {
 		final int last = offset + length;
 		// Determine lowest affected replacement
-		int i = findLowestAffected(replacements, offset,length,bytes);
+		int i = findLowestAffected(replacements,offset);
 		// Scan forward to greatest effected replacement
 		int j = i;
 		while(j < replacements.length && replacements[j].offset() <= last) {
@@ -263,13 +263,67 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 * @param bytes
 	 * @return
 	 */
-	private static int findLowestAffected(Replacement[] replacements, int offset, int length, byte[] bytes) {
-		// TODO: actually employ binary search!
+	private static int findLowestAffected(Replacement[] replacements, int offset) {
 		int i = 0;
-		while(i < replacements.length && replacements[i].end() < offset) {
-			i = i + 1;
+		int j = replacements.length - 1;
+		//
+		while (i <= j) {
+			// Determine center position
+			final int pivot = (i + j) >>> 1;
+			// Extract corresponding replacement
+			Replacement p = replacements[pivot];
+			// Do the binary chop
+			if (offset < p.offset) {
+				// Replacement above
+				j = pivot - 1;
+			} else if (p.end() < offset) {
+				// Replacement below
+				i = pivot + 1;
+			} else {
+				// Match!
+				return pivot;
+			}
 		}
+		// done
 		return i;
+	}
+
+	/**
+	 * Find the replacement (if any) in a replacement sequence containing the given
+	 * offset. If no such replacement exists, a negative value is returned whose
+	 * absolute value indicates the point within the replacement sequence where such
+	 * a replacement would be found. Otherwise, the index of the enclosing
+	 * replacement is returned. This is implemented using a binary search for
+	 * efficiency, which is made possible because replacements in a sequence are
+	 * always stored in sorted order.
+	 *
+	 * @param replacements
+	 * @param offset
+	 * @return
+	 */
+	public static int findEnclosing(Replacement[] replacements, int offset) {
+		int i = 0;
+		int j = replacements.length - 1;
+		//
+		while (i <= j) {
+			// Determine center position
+			final int pivot = (i + j) >>> 1;
+			// Extract corresponding replacement
+			Replacement p = replacements[pivot];
+			// Do the binary chop
+			if (offset < p.offset) {
+				// Replacement above
+				j = pivot - 1;
+			} else if (p.end() <= offset) {
+				// Replacement below
+				i = pivot + 1;
+			} else {
+				// Match!
+				return pivot;
+			}
+		}
+		// failure
+		return -(i+1);
 	}
 
 	/**
@@ -393,7 +447,7 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 *   +-+-+-+-+-+-+-+    +-+-+-+-+-+-+-+
 	 * </pre>
 	 *
-	 * </li>
+	 * )</li>
 	 *
 	 *
 	 * <li>Replacement overwrites:
@@ -481,9 +535,11 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 * @param replacements
 	 * @return
 	 */
-	private static int delta(int i, int j, Replacement[] replacements) {
+	public static int delta(int i, int j, Replacement[] replacements) {
+		final int n = replacements.length;
+		final int m = j < n ? j : n - 1;
 		int d = 0;
-		for (; i <= j; ++i) {
+		for (; i <= m; ++i) {
 			d += replacements[i].delta();
 		}
 		return d;
