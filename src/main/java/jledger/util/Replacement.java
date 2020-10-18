@@ -340,23 +340,33 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	 */
 	private static Replacement[] write(int index, Replacement[] replacements, Replacement r) {
 		final Replacement ith = replacements[index];
+		// Do some precalculations
+		final int r_end = r.offset + r.bytes.length;
+		final int ith_end = ith.offset + ith.bytes.length;
 		// Construct new replacement sequence (as copy of original)
 		final Replacement[] rs = Arrays.copyOf(replacements, replacements.length);
 		// Determine start of replaced region (in final layout).
-		int offset = Math.min(ith.offset, r.offset);
+		final int offset = Math.min(ith.offset, r.offset);
 		// Determine end of replaced region (in final layout).
-		int end = Math.max(ith.offset + ith.bytes.length, r.offset + r.bytes.length);
+		final int end = Math.max(ith_end, r_end);
+		// Determine length of affected region (in final layout).
+		final int nlength = end - offset;
 		// Determine length of affected region (in original layout). This includes the
 		// entire length of the original replacement, plus any additional bytes from the
 		// new replacement which occur either side of the original.
-		int len = (end - offset) - ith.delta();
-		byte[] bs = new byte[end - offset];
-		// TODO: this copy is inefficient in some cases as we don't need to copy all the
-		// bytes of the original sequence. For example, if the original sequence is
-		// completely overwritten then we don't need to copy anything!
-		System.arraycopy(ith.bytes, 0, bs, ith.offset - offset, ith.bytes.length);
-		System.arraycopy(r.bytes, 0, bs, r.offset - offset, r.bytes.length);
-		rs[index] = new Replacement(offset, len, bs);
+		int length = nlength - ith.delta();
+		byte[] bs = new byte[nlength];
+		// Determine lower and upper overhangs
+		final int lower = r.offset - offset;
+		final int upper = end - r_end;
+		// Copy any bytes from original array which are below overwritten region.\
+		System.arraycopy(ith.bytes, 0, bs, 0, lower);
+		// Copy any bytes from original array which are above overwritten region.
+		System.arraycopy(ith.bytes, ith.bytes.length - upper, bs, bs.length - upper, upper);
+		// Copy bytes from the write itself.
+		System.arraycopy(r.bytes, 0, bs, lower, r.bytes.length);
+		// Put in the new replacement.
+		rs[index] = new Replacement(offset, length, bs);
 		// Done
 		return rs;
 	}
@@ -433,25 +443,29 @@ public final class Replacement implements Content.Replacement, Comparable<Replac
 	private static Replacement[] write(int i, int j, Replacement[] replacements, Replacement r) {
 		Replacement ith = replacements[i];
 		Replacement jth = replacements[j];
+		final int r_end = r.offset + r.bytes.length;
+		final int jth_end = jth.offset + jth.bytes.length;
 		// Determine starting offset
 		int offset = Math.min(ith.offset, r.offset);
 		// Determine last
-		int end = Math.max(jth.offset + jth.bytes.length, r.offset + r.bytes.length);
+		int end = Math.max(jth_end, r_end);
 		// Determine length of affected region in original array
-		int len = (end - offset) - delta(i,j,replacements);
+		int len = (end - offset) - delta(i, j, replacements);
 		// Construct new replacement
 		byte[] bs = new byte[end - offset];
-		// TODO: following two copies inefficient in many cases
+		// Determine lower and upper overhangs
+		final int lower = r.offset - offset;
+		final int upper = end - r_end;
 		// Write first affected replacement
-		System.arraycopy(ith.bytes, 0, bs, ith.offset - offset, ith.bytes.length);
+		System.arraycopy(ith.bytes, 0, bs, 0, lower);
 		// Write second affected replacement
-		System.arraycopy(jth.bytes, 0, bs, jth.offset - offset, jth.bytes.length);
+		System.arraycopy(jth.bytes, jth.bytes.length - upper, bs, bs.length - upper, upper);
 		// Write replacement data
 		System.arraycopy(r.bytes, 0, bs, r.offset - offset, r.bytes.length);
-		// Check invariant which must hold to prevent original array being returned from remove.
-		assert (i+1) >= j;
+		// Check invariant holds to prevent original array being returned.
+		assert (i + 1) >= j;
 		// Replace all elements between i and j with single replacement
-		Replacement[] rs = ArrayUtils.remove(i+1,j,replacements);
+		Replacement[] rs = ArrayUtils.remove(i + 1, j, replacements);
 		// Put merged replacement in place
 		rs[i] = new Replacement(offset, len, bs);
 		// Done
