@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
+import jledger.core.Content.Diff;
 import jledger.core.Ledger;
 import jledger.layouts.Array;
 import static jledger.layouts.Primitive.INT;
@@ -43,7 +44,9 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 		// Always at least one version
 		this.versions = 1;
 		// write initial value
-		offsets[0] = append(0, value.getBlob().readAll());
+		byte[] bs = value.getBlob().readAll();
+		int off = append(0,bs.length);
+		offsets[0] = append(off, bs);
 	}
 
 	@Override
@@ -56,14 +59,13 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 	}
 
 	@Override
+	public T last() {
+		return get(versions - 1);
+	}
+
+	@Override
 	public T get(int v) {
-		int offset = (v == 0) ? 0 : offsets[v - 1];
-		// FIXME: following is broken for two reasons. Firstly, for anything other than
-		// initial version, it's not doing the right thing since the data at the given
-		// offset represents an encoded transaction, not a snapshot. Secondly, unclear
-		// whether is sensible for initial blob to include data for all subsequent
-		// transactions.
-		return layout.read(new ByteBlob(bytes), offset);
+		return layout.read(new Blob<T>(this, v), 0);
 	}
 
 	@Override
@@ -80,43 +82,67 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 	private int append(Content.Blob b, int offset) {
 		if (b instanceof Content.Diff) {
 			Content.Diff d = (Content.Diff) b;
-			// FIXME: this is broken because doesn't include count of replacements. This is
-			// challenging because need to extract this from parent somehow I guess?
-
-			// Append parent replacements (if any)
-			offset = append(d.parent(),offset);
-			// Recursive case
-			for (int i = 0; i != d.count(); ++i) {
-				offset = append(d.getReplacement(i), offset);
-			}
-			// done;
-			return offset;
-		} else if (b instanceof ByteBlob) {
-			ByteBlob bb = (ByteBlob) b;
-			byte[] bs = bb.readAll();
-			if (bs == bytes) {
-				// Terminating case
-				return offset;
+			Content.Blob p = d.parent();
+			if (p instanceof Blob) {
+				Blob<T> pb = (Blob<T>) p;
+				if (pb.parent == this) {
+					if (pb.version == (versions - 1)) {
+						// Store replacement count
+						offset = append(d.count(),offset);
+						// Store replacement headers
+						for (int i = 0; i != d.count(); ++i) {
+							Content.Replacement r = d.getReplacement(i);
+							offset = append(offset,r.offset());
+							offset = append(offset,r.size());
+							offset = append(offset,r.bytes().length);
+						}
+						// Store replacement contents
+						for (int i = 0; i != d.count(); ++i) {
+							Content.Replacement r = d.getReplacement(i);
+							offset = append(offset,r.bytes());
+						}
+						// done;
+						return offset;
+					} else {
+						throw new IllegalArgumentException("non-sequential put");
+					}
+				} else {
+					throw new IllegalArgumentException("blob not from this ledger");
+				}
 			}
 		}
 		throw new IllegalArgumentException("invalid blob for ledger");
 	}
 
-	private int append(Content.Replacement b, int offset) {
-		byte[] bs = b.bytes();
-		int o = b.offset();
-		int s = b.size();
-		System.out.println("OFFSET = " + offset + ", |BS|=" + bs.length);
-		// Determine space required
-		final int n = offset + 2 + bs.length;
+	private int append(int offset, byte value) {
+		final int n = offset + 1;
+		// Ensure sufficient capacity
 		ensureCapacity(n);
-		// FIXME: this is broken as it doesn't handle large enough replacements.
-		if(o > 127 || s > 127) {
-			throw new UnsupportedOperationException("implement me!");
-		}
-		bytes[offset++] = (byte) o;
-		bytes[offset++] = (byte) s;
-		System.arraycopy(bs, 0, bytes, offset, bs.length);
+		// Copy bytes
+		bytes[offset] = value;
+		// Done
+		return n;
+	}
+
+	private int append(int offset, int value) {
+		// FIXME: This is inefficient as always requires 4 bytes. However, to enable
+		// binary search we want fixed size entries.
+
+		// Extract bytes
+		final byte b1 = (byte) ((value >> 24) & 0xFF);
+		final byte b2 = (byte) ((value >> 16) & 0xFF);
+		final byte b3 = (byte) ((value >> 8) & 0xFF);
+		final byte b4 = (byte) (value & 0xFF);
+		// Determine updated length
+		final int n = offset + 4;
+		// Ensure sufficient capacity
+		ensureCapacity(n);
+		// Copy bytes
+		bytes[offset] = b1;
+		bytes[offset+1] = b2;
+		bytes[offset+2] = b3;
+		bytes[offset+3] = b4;
+		// Done
 		return n;
 	}
 
@@ -147,28 +173,193 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 		}
 	}
 
-	private static class Test extends Array.Proxy<Integer, Test> {
-		public static final Array.Layout<Integer, Test> LAYOUT = Array.LAYOUT(INT, Test::new);
+	/**
+	 * A proxy representing the blob in this ledger at a given version.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <S>
+	 */
+	private static class Blob<S extends Content.Proxy> implements Content.Blob {
+		/**
+		 * Identify ledger for which this is a proxy.
+		 */
+		private final ByteArrayLedger<S> parent;
+		/**
+		 * Identify ledger transaction to which this corresponds.
+		 */
+		private final int version;
 
-		public Test() {
-			super(LAYOUT, ByteBlob.EMPTY.insertInt(0, 123), 0);
+		public Blob(ByteArrayLedger<S> parent, int version) {
+			this.parent = parent;
+			this.version = version;
 		}
 
-		public Test(Blob blob, int offset) {
-			super(LAYOUT, blob, offset);
+		@Override
+		public int size() {
+			return blob_size(parent,version);
 		}
 
-		public Test increment() {
-			int value = INT.read(blob, offset);
-			Content.Blob b = INT.write(value + 1, blob, offset);
-			return new Test(b, offset);
+		@Override
+		public byte[] readAll() {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public byte readByte(int index) {
+			return blob_read(index, parent, version);
+		}
+
+		@Override
+		public short readShort(int index) {
+			// FIXME: performance could be improved!!
+			byte b1 = readByte(index);
+			byte b2 = readByte(index + 1);
+			// Recombine bytes
+			return (short) ((b1 << 8) | b2);
+		}
+
+		@Override
+		public int readInt(int index) {
+			// FIXME: performance could be improved!!
+			byte b1 = readByte(index);
+			byte b2 = readByte(index + 1);
+			byte b3 = readByte(index + 2);
+			byte b4 = readByte(index + 3);
+			// Recombine bytes
+			return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+		}
+
+		@Override
+		public byte[] readBytes(int index, int length) {
+			// FIXME: performance could be improved!!
+			byte[] bs = new byte[length];
+			for (int i = 0; i < length; ++i) {
+				bs[i] = readByte(index + i);
+			}
+			return bs;
+		}
+
+		@Override
+		public void readBytes(int index, int length, byte[] dest, int destStart) {
+			// FIXME: performance could be improved using binary search!!
+			for (int i = 0; i < length; ++i) {
+				dest[destStart + i] = readByte(index + i);
+			}
+		}
+
+		@Override
+		public Diff writeByte(int index, byte b) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Diff writeShort(int index, short i16) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Diff writeInt(int index, int i32) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Diff writeBytes(int index, byte... bytes) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Diff replaceBytes(int index, int length, byte... bytes) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Diff insertByte(int index, byte b) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Diff insertShort(int index, short i16) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Diff insertInt(int index, int i32) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public Diff insertBytes(int index, byte... bytes) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public jledger.core.Content.Blob merge(jledger.core.Content.Blob sibling) {
+			throw new UnsupportedOperationException();
 		}
 	}
 
-	public static void main(String[] args) {
-		ByteArrayLedger<Test> l = new ByteArrayLedger<>(new Test());
-		System.out.println("VERSIONS: " + l.versions + ", SIZE: " + l.size() + " bytes.");
-		l.put(l.get(0).increment());
-		System.out.println("VERSIONS: " + l.versions + ", SIZE: " + l.size() + " bytes.");
+	private static int blob_size(ByteArrayLedger<?> parent, int version) {
+		// Determine transaction offset
+		if(version == 0) {
+			// base case
+			return read_i32(parent.bytes,0);
+		} else {
+			// recursive case
+			int offset = parent.offsets[version-1];
+			// Determine parent size
+			int size = blob_size(parent,version-1);
+			// Determine replacement count
+			int n = read_i32(parent.bytes,offset);
+			// Apply replacement delta's
+			for(int i=0;i!=n;++i) {
+				int bp = offset + (n * 12);
+				int s = read_i32(parent.bytes, bp + 4);
+				int l = read_i32(parent.bytes, bp + 8);
+				size += (l - s);
+			}
+			return size;
+		}
+	}
+
+	private static byte blob_read(int index, ByteArrayLedger<?> parent, int version) {
+		if(version == 0) {
+			// base case
+			return parent.bytes[index + 4];
+		} else {
+			// TODO: could be more efficient with binary search.
+			// recursive case
+			int offset = parent.offsets[version-1];
+			int delta = 0;
+			// Determine replacement count
+			int n = read_i32(parent.bytes,offset);
+			//
+			int payload = (n * 12) + offset;
+			// Apply replacement delta's
+			for(int i=0;i!=n;++i) {
+				int bp = offset + (n * 12);
+				int o = read_i32(parent.bytes, bp);
+				int s = read_i32(parent.bytes, bp + 4);
+				int l = read_i32(parent.bytes, bp + 8);
+				if(index < o) {
+					return blob_read(index + delta,parent,version);
+				} else if(index < (o + l)) {
+					return parent.bytes[payload + (index-o)];
+				} else {
+					delta += (l-s);
+					payload += l;
+				}
+			}
+			return blob_read(index + delta,parent,version);
+		}
+	}
+
+	private static int read_i32(byte[] bytes, int offset) {
+		byte b1 = bytes[offset];
+		byte b2 = bytes[offset + 1];
+		byte b3 = bytes[offset + 2];
+		byte b4 = bytes[offset + 3];
+		// Recombine bytes
+		return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
 	}
 }

@@ -45,23 +45,29 @@ public class SequentialLedger<T extends Content.Proxy> implements Ledger<T> {
 
 	private void append(Content.Blob b) {
 		// Determine previous blob in sequence
-		Content.Blob prev = ledger[length - 1];
-		if(b == prev) {
-			// Do nothing as we are correctly appending something onto the previous block.
-		} else if (b instanceof Content.Diff) {
-			Content.Diff d = (Content.Diff) b;
-			// Append any parent transactions
-			append(d.parent());
-			// Ensure sufficient capacity
-			if (ledger.length == length) {
-				ledger = Arrays.copyOf(ledger, length * 2);
-			}
-			// Append this transaction
-			ledger[length++] = b;
-		} else {
-			// This signals an attempt to append a block which was not derived from the
-			// previous block on the ledger.
-			throw new IllegalArgumentException("Non-sequential put");
+//		Content.Blob prev = ledger[length - 1];
+//		if(b == prev) {
+//			// Do nothing as we are correctly appending something onto the previous block.
+//		} else if (b instanceof Content.Diff) {
+//			Content.Diff d = (Content.Diff) b;
+//			// Append any parent transactions
+//			append(d.parent());
+//			// Ensure sufficient capacity
+//			if (ledger.length == length) {
+//				ledger = Arrays.copyOf(ledger, length * 2);
+//			}
+//			// Append this transaction
+//			ledger[length++] = b;
+//		} else {
+//			// This signals an attempt to append a block which was not derived from the
+//			// previous block on the ledger.
+//			throw new IllegalArgumentException("Non-sequential put (" + b + ")");
+//		}
+		// Unclear what we should be doing here!
+		if (ledger.length == length) {
+			ledger = Arrays.copyOf(ledger, length * 2);
 		}
+		// Append this transaction
+		ledger[length++] = b;
 	}
 }

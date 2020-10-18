@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
@@ -8,13 +9,14 @@ import jledger.layouts.Array;
 import jledger.layouts.Pair;
 
 import static jledger.layouts.Primitive.BYTE_ARRAY;
+
+import jledger.util.ByteArrayLedger;
 import jledger.util.ByteBlob;
-import jledger.util.SequentialLedger;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
 public class BuildServer {
-	private final SequentialLedger<Directory> ledger = new SequentialLedger<>(new Directory(), 10);
+	private final ByteArrayLedger<Directory> ledger = new ByteArrayLedger<>(new Directory(), 10);
 
 	public void create(String name, byte[] contents) {
 		Directory d = ledger.get(ledger.versions() - 1);
@@ -93,7 +95,7 @@ public class BuildServer {
 					// FIXME: replacing whole contents
 					Content.Blob b = ith.replace(contents);
 					//
-					return new Directory(b.compact(blob), offset);
+					return new Directory(b, offset);
 				}
 			}
 			// Nothing found

@@ -30,6 +30,13 @@ public interface Ledger<T extends Content.Proxy> {
 	public int versions();
 
 	/**
+	 * Get the latest version of the ledger's contents.
+	 *
+	 * @return
+	 */
+	public T last();
+
+	/**
 	 * Get the current state at a given timestamp.
 	 *
 	 * @return
