@@ -78,6 +78,7 @@ public class BuildServer {
 				String n = new String(ith.getFirst());
 				if (n.equals(name)) {
 					// Match
+					byte[] original = ith.getSecond();
 					// FIXME: replacing whole contents
 					Content.Blob b = ith.replace(contents);
 					//

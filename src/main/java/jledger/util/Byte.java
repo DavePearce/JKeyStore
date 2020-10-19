@@ -22,6 +22,167 @@ import jledger.core.Content;
 public class Byte {
 
 	/**
+	 * Construct a diff between two arrays of bytes using the <i>longest common
+	 * subsequence</i> algorithm.
+	 *
+	 * @param before
+	 * @param after
+	 * @return
+	 */
+	public static Replacement[] diff(byte[] before, byte[] after) {
+		// Apply the LCS algorithm
+		int[] mapping = longestCommonSubsequence(before, after);
+		// Convert mapping to deltas
+		List<Replacement> deltas = extractDeltas(mapping, after);
+		// Contruct final diff.
+		return deltas.toArray(new Replacement[deltas.size()]);
+	}
+
+	/**
+	 * <p>
+	 * Determine the longest common subsequence of two sequences. For example,
+	 * suppose <code>X=[1,2,2,3,2,3,4]</code> and <code>Y=[2,2,5,3,4,5]</code> then
+	 * a <i>common subsequence</code> is <code>[2,2]</code> and another is
+	 * <code>[2,3,4]</code>. However, the <i>longest common subsequence</code> is
+	 * <code>[2,2,3,4]</code>.
+	 * </p>
+	 *
+	 * <p>
+	 * This algorithm produces a mapping from elements in X to elements in Y. For
+	 * the above example, it might produce <code>[-1,0,1,3,-1,-1]</code>. Here,
+	 * <code>-1</code> indicates the element in <code>X</code> does not match an
+	 * element in <code>Y</code>. In contrast, non-negative values are the matching
+	 * indices in <code>Y</code>.
+	 * </p>
+	 *
+	 * <p>
+	 * <b>NOTE:</b> Whilst the above example had only one longest common
+	 * subsequence, it's not always the case there is only one. This algorithm
+	 * simply returns <i>a</i> longest common subsequence.
+	 * </p>
+	 *
+	 *
+	 * @param X The left sequence
+	 * @param Y The right sequence
+	 * @return The resulting mapping
+	 */
+	private static int[] longestCommonSubsequence(byte[] X, byte[] Y) {
+		final int m = X.length + 1;
+		final int n = Y.length + 1;
+		final int[] C = new int[m * n];
+		// Calculate the lengths
+		for (int i = 1; i < m; ++i) {
+			for (int j = 1; j < n; ++j) {
+				int ij = i + (j * m);
+				if (X[i - 1] == Y[j - 1]) {
+					C[ij] = C[(i - 1) + ((j - 1) * m)] + 1;
+				} else {
+					final int Cim1j = C[(i - 1) + (j * m)];
+					final int Cijm1 = C[i + ((j - 1) * m)];
+					C[ij] = (Cim1j >= Cijm1) ? Cim1j : Cijm1;
+				}
+			}
+		}
+		// Finally, extract the LCS
+		int[] Z = new int[X.length];
+		Arrays.fill(Z, -1);
+		extractSubsequence(C, Z, m - 1, n - 1);
+		return Z;
+	}
+
+	protected static void extractSubsequence(int[] C, int[] Z, int i, int j) {
+		final int m = Z.length + 1;
+		if (i > 0 && j > 0) {
+			int Cij = C[i + (j * m)];
+			final int Cim1j = C[(i - 1) + (j * m)];
+			final int Cijm1 = C[i + ((j - 1) * m)];
+			if (Cij == Cim1j) {
+				Z[i - 1] = -1;
+				extractSubsequence(C, Z, i - 1, j);
+			} else if (Cij == Cijm1) {
+				Z[i - 1] = -1;
+				extractSubsequence(C, Z, i, j - 1);
+			} else {
+				extractSubsequence(C, Z, i - 1, j - 1);
+				Z[i - 1] = j - 1;
+			}
+		}
+	}
+
+
+	/**
+	 * <p>
+	 * Extract delta's using a given mapping from the before sequence to the after
+	 * sequence, as generated from the <i>least common subsequence</i> algorithm.
+	 * For example:
+	 * </p>
+	 *
+	 * <pre>
+	 *  0 1 2
+	 * +-+-+-+-+-+
+	 * |a|b|c|d|e| (before)
+	 * +-+-+-+-+-+
+	 *    | |
+	 *   / /
+	 *  | |
+	 * +-+-+-+-+
+	 * |b|c|f|g| (after)
+	 * +-+-+-+-+
+	 * </pre>
+	 *
+	 * <p>
+	 * In this case, the mapping would be <code>[-1,0,1,-1,-1]</code> which
+	 * indicates positions <code>0</code>, <code>3</code> and <code>4</code> are
+	 * removed whilst positions <code>1</code> and <code>2</code> correspond to
+	 * positions <code>0</code> and <code>1</code> in the final sequence.
+	 * </p>
+	 *
+	 * <p>
+	 * The current extraction mechanism could still be improved in that it can
+	 * generate lots of small delta's when a single large one would be more
+	 * sensible. Potentially, some form of post processing could coalesce delta's as
+	 * necessary.
+	 * </p>
+	 *
+	 * @param mapping
+	 * @param after
+	 * @return
+	 */
+	private static List<Replacement> extractDeltas(int[] mapping, byte[] after) {
+		ArrayList<Replacement> deltas = new ArrayList<>();
+		// Initialise after markers
+		int aStart = 0, aPos = 0;
+		// Initialise before markers
+		int bStart = 0, bPos = 0;
+		// Proceed extracting delta's
+		while (bPos < mapping.length && aPos < after.length) {
+			if (mapping[bPos] > aPos) {
+				// Uneven case. Increase after buffer
+				aPos = mapping[bPos];
+			} else if (mapping[bPos] < aPos) {
+				// Uneven case. Increase before buffer
+				bPos = bPos + 1;
+			} else {
+				// Matching case. Flush buffers and advance
+				if (bStart < bPos || aStart < aPos) {
+					byte[] additions = Arrays.copyOfRange(after, aStart, aPos);
+					deltas.add(new Replacement(aStart, bPos - bStart, additions));
+				}
+				aStart = aPos = aPos + 1;
+				bStart = bPos = bPos + 1;
+			}
+		}
+		// Flush remaining buffers
+		if (bStart < mapping.length || aStart < after.length) {
+			// Terminating case. Flush buffers and end.
+			byte[] additions = Arrays.copyOfRange(after, aStart, after.length);
+			deltas.add(new Replacement(aStart, mapping.length - bStart, additions));
+		}
+		//
+		return deltas;
+	}
+
+	/**
 	 * A straightforward implementation of <code>Content.Blob</code> which is backed
 	 * by an array,
 	 *
@@ -165,167 +326,6 @@ public class Byte {
 		public String toString() {
 			return Arrays.toString(bytes);
 		}
-
-		/**
-		 * Construct a diff between two arrays of bytes using the <i>longest common
-		 * subsequence</i> algorithm.
-		 *
-		 * @param before
-		 * @param after
-		 * @return
-		 */
-		public static Diff diff(byte[] before, byte[] after) {
-			// Apply the LCS algorithm
-			int[] mapping = longestCommonSubsequence(before, after);
-			// Convert mapping to deltas
-			List<Replacement> deltas = extractDeltas(mapping, after);
-			// Contruct final diff.
-			return new Diff(new Blob(before), deltas.toArray(new Replacement[deltas.size()]));
-		}
-
-		/**
-		 * <p>
-		 * Extract delta's using a given mapping from the before sequence to the after
-		 * sequence, as generated from the <i>least common subsequence</i> algorithm.
-		 * For example:
-		 * </p>
-		 *
-		 * <pre>
-		 *  0 1 2
-		 * +-+-+-+-+-+
-		 * |a|b|c|d|e| (before)
-		 * +-+-+-+-+-+
-		 *    | |
-		 *   / /
-		 *  | |
-		 * +-+-+-+-+
-		 * |b|c|f|g| (after)
-		 * +-+-+-+-+
-		 * </pre>
-		 *
-		 * <p>
-		 * In this case, the mapping would be <code>[-1,0,1,-1,-1]</code> which
-		 * indicates positions <code>0</code>, <code>3</code> and <code>4</code> are
-		 * removed whilst positions <code>1</code> and <code>2</code> correspond to
-		 * positions <code>0</code> and <code>1</code> in the final sequence.
-		 * </p>
-		 *
-		 * <p>
-		 * The current extraction mechanism could still be improved in that it can
-		 * generate lots of small delta's when a single large one would be more
-		 * sensible. Potentially, some form of post processing could coalesce delta's as
-		 * necessary.
-		 * </p>
-		 *
-		 * @param mapping
-		 * @param after
-		 * @return
-		 */
-		private static List<Replacement> extractDeltas(int[] mapping, byte[] after) {
-			ArrayList<Replacement> deltas = new ArrayList<>();
-			// Initialise after markers
-			int aStart = 0, aPos = 0;
-			// Initialise before markers
-			int bStart = 0, bPos = 0;
-			// Proceed extracting delta's
-			while (bPos < mapping.length && aPos < after.length) {
-				if (mapping[bPos] > aPos) {
-					// Uneven case. Increase after buffer
-					aPos = mapping[bPos];
-				} else if (mapping[bPos] < aPos) {
-					// Uneven case. Increase before buffer
-					bPos = bPos + 1;
-				} else {
-					// Matching case. Flush buffers and advance
-					if (bStart < bPos || aStart < aPos) {
-						byte[] additions = Arrays.copyOfRange(after, aStart, aPos);
-						deltas.add(new Replacement(aStart, bPos - bStart, additions));
-					}
-					aStart = aPos = aPos + 1;
-					bStart = bPos = bPos + 1;
-				}
-			}
-			// Flush remaining buffers
-			if (bStart < mapping.length || aStart < after.length) {
-				// Terminating case. Flush buffers and end.
-				byte[] additions = Arrays.copyOfRange(after, aStart, after.length);
-				deltas.add(new Replacement(aStart, mapping.length - bStart, additions));
-			}
-			//
-			return deltas;
-		}
-
-		/**
-		 * <p>
-		 * Determine the longest common subsequence of two sequences. For example,
-		 * suppose <code>X=[1,2,2,3,2,3,4]</code> and <code>Y=[2,2,5,3,4,5]</code> then
-		 * a <i>common subsequence</code> is <code>[2,2]</code> and another is
-		 * <code>[2,3,4]</code>. However, the <i>longest common subsequence</code> is
-		 * <code>[2,2,3,4]</code>.
-		 * </p>
-		 *
-		 * <p>
-		 * This algorithm produces a mapping from elements in X to elements in Y. For
-		 * the above example, it might produce <code>[-1,0,1,3,-1,-1]</code>. Here,
-		 * <code>-1</code> indicates the element in <code>X</code> does not match an
-		 * element in <code>Y</code>. In contrast, non-negative values are the matching
-		 * indices in <code>Y</code>.
-		 * </p>
-		 *
-		 * <p>
-		 * <b>NOTE:</b> Whilst the above example had only one longest common
-		 * subsequence, it's not always the case there is only one. This algorithm
-		 * simply returns <i>a</i> longest common subsequence.
-		 * </p>
-		 *
-		 *
-		 * @param X The left sequence
-		 * @param Y The right sequence
-		 * @return The resulting mapping
-		 */
-		private static int[] longestCommonSubsequence(byte[] X, byte[] Y) {
-			final int m = X.length + 1;
-			final int n = Y.length + 1;
-			final int[] C = new int[m * n];
-			// Calculate the lengths
-			for (int i = 1; i < m; ++i) {
-				for (int j = 1; j < n; ++j) {
-					int ij = i + (j * m);
-					if (X[i - 1] == Y[j - 1]) {
-						C[ij] = C[(i - 1) + ((j - 1) * m)] + 1;
-					} else {
-						final int Cim1j = C[(i - 1) + (j * m)];
-						final int Cijm1 = C[i + ((j - 1) * m)];
-						C[ij] = (Cim1j >= Cijm1) ? Cim1j : Cijm1;
-					}
-				}
-			}
-			// Finally, extract the LCS
-			int[] Z = new int[X.length];
-			Arrays.fill(Z, -1);
-			extractSubsequence(C, Z, m - 1, n - 1);
-			return Z;
-		}
-
-		protected static void extractSubsequence(int[] C, int[] Z, int i, int j) {
-			final int m = Z.length + 1;
-			if (i > 0 && j > 0) {
-				int Cij = C[i + (j * m)];
-				final int Cim1j = C[(i - 1) + (j * m)];
-				final int Cijm1 = C[i + ((j - 1) * m)];
-				if (Cij == Cim1j) {
-					Z[i - 1] = -1;
-					extractSubsequence(C, Z, i - 1, j);
-				} else if (Cij == Cijm1) {
-					Z[i - 1] = -1;
-					extractSubsequence(C, Z, i, j - 1);
-				} else {
-					extractSubsequence(C, Z, i - 1, j - 1);
-					Z[i - 1] = j - 1;
-				}
-			}
-		}
-
 		/**
 		 * Useful for debugging.
 		 *
