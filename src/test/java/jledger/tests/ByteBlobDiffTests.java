@@ -21,7 +21,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import jledger.core.Content;
-import jledger.util.ByteBlob;
+import jledger.util.Byte;
 
 /**
  * Tests for which <code>jledger.util.Diff</code> which are constructed from
@@ -39,7 +39,7 @@ public class ByteBlobDiffTests {
 	@Test
 	public void test_01() {
 		byte[] bs1 = "Hello World".getBytes();
-		ByteBlob v1 = new ByteBlob(bs1);
+		Byte.Blob v1 = new Byte.Blob(bs1);
 		assertEquals(v1.size(),11);
 		assertEquals(v1.readAll(),bs1);
 		for (int i = 0; i != bs1.length; ++i) {
@@ -50,7 +50,7 @@ public class ByteBlobDiffTests {
 	@Test
 	public void test_02() {
 		byte[] bs1 = "hello world".getBytes();
-		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob v = new Byte.Blob(bs1);
 		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of writes
 		vs[0] = v.writeByte(0, (byte) 'H');
@@ -93,7 +93,7 @@ public class ByteBlobDiffTests {
 	@Test
 	public void test_03() {
 		byte[] bs1 = "hello world".getBytes();
-		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob v = new Byte.Blob(bs1);
 		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of replacements
 		vs[0] = v.replaceBytes(0, 1, "H".getBytes());
@@ -136,7 +136,7 @@ public class ByteBlobDiffTests {
 	@Test
 	public void test_04() {
 		byte[] bs1 = "hello world".getBytes();
-		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob v = new Byte.Blob(bs1);
 		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of replacements
 		vs[0] = v.replaceBytes(0, 1, "Hh".getBytes());
@@ -179,7 +179,7 @@ public class ByteBlobDiffTests {
 	@Test
 	public void test_05() {
 		byte[] bs1 = "hello world".getBytes();
-		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob v = new Byte.Blob(bs1);
 		Content.Blob[] vs = new Content.Blob[11];
 		// A bunch of replacements
 		vs[0] = v.replaceBytes(0, 1, "HhH".getBytes());
@@ -222,7 +222,7 @@ public class ByteBlobDiffTests {
 	@Test
 	public void test_06() {
 		byte[] bs1 = "hello world".getBytes();
-		Content.Blob v = new ByteBlob(bs1);
+		Content.Blob v = new Byte.Blob(bs1);
 		Content.Blob[] vs = new Content.Blob[10];
 		// A bunch of replacements
 		vs[0] = v.replaceBytes(0, 2, "H".getBytes());
@@ -263,7 +263,7 @@ public class ByteBlobDiffTests {
 	public void test_08() {
 		// disjoint writes (first lower and increasing)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) '_');
 		Content.Blob v3 = v2.writeBytes(7, (byte) 'W', (byte) 'O');
 		assertArrayEquals("HEL_lo World".getBytes(),v2.readAll());
@@ -275,7 +275,7 @@ public class ByteBlobDiffTests {
 	public void test_09() {
 		// disjoint writes (first lower and decreasing)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E');
 		Content.Blob v3 = v2.writeBytes(5, (byte) 'W', (byte) 'O');
 		assertArrayEquals("HElo World".getBytes(),v2.readAll());
@@ -287,7 +287,7 @@ public class ByteBlobDiffTests {
 	public void test_10() {
 		// disjoint writes (first higher and increasing)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(6, 2, (byte) 'W', (byte) 'O', (byte) '_');
 		Content.Blob v3 = v2.writeBytes(1, (byte) 'E', (byte) 'L');
 		assertArrayEquals("Hello WO_rld".getBytes(),v2.readAll());
@@ -299,7 +299,7 @@ public class ByteBlobDiffTests {
 	public void test_11() {
 		// disjoint writes (first higher and decreasing)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(6, 2, (byte) 'W');
 		Content.Blob v3 = v2.writeBytes(1, (byte) 'E', (byte) 'L');
 		assertArrayEquals("Hello Wrld".getBytes(),v2.readAll());
@@ -311,7 +311,7 @@ public class ByteBlobDiffTests {
 	public void test_12() {
 		// disjoint writes (third goes in between)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) '_');
 		Content.Blob v3 = v2.writeBytes(7, (byte) 'W', (byte) 'O');
 		Content.Blob v4 = v3.writeBytes(5, (byte) '0');
@@ -325,7 +325,7 @@ public class ByteBlobDiffTests {
 	public void test_13() {
 		// disjoint writes (third goes in after)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) '_');
 		Content.Blob v3 = v2.writeBytes(7, (byte) 'W', (byte) 'O');
 		Content.Blob v4 = v3.writeBytes(10, (byte) '1');
@@ -340,7 +340,7 @@ public class ByteBlobDiffTests {
 	public void test_14() {
 		// adjacent writes (first higher and increasing)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(6, 3, (byte) 'W', (byte) 'O', (byte) 'R', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(4, (byte) '0', (byte) '_');
 		assertArrayEquals("Hello WORLld".getBytes(),v2.readAll());
@@ -353,7 +353,7 @@ public class ByteBlobDiffTests {
 	public void test_15() {
 		// adjacent writes (first higher and decreasing)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(6, 3, (byte) 'W', (byte) 'O');
 		Content.Blob v3 = v2.writeBytes(4, (byte) '0', (byte) '_');
 		assertArrayEquals("Hello WOld".getBytes(),v2.readAll());
@@ -366,7 +366,7 @@ public class ByteBlobDiffTests {
 	public void test_16() {
 		// adjacent writes (first lower and increasing)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(5, (byte) '0', (byte) '_');
 		assertArrayEquals("HELLLo World".getBytes(),v2.readAll());
@@ -379,7 +379,7 @@ public class ByteBlobDiffTests {
 	public void test_17() {
 		// adjacent writes (first lower and decreasing)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(3, (byte) '0', (byte) '_');
 		assertArrayEquals("HELo World".getBytes(),v2.readAll());
@@ -392,7 +392,7 @@ public class ByteBlobDiffTests {
 	public void test_18() {
 		// adjacent writes (increasing and third inbetween)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(6, (byte) '_');
 		Content.Blob v4 = v3.writeBytes(5, (byte) '0');
@@ -407,7 +407,7 @@ public class ByteBlobDiffTests {
 	public void test_19() {
 		// adjacent writes (decreasing and third inbetween)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(4, (byte) '_');
 		Content.Blob v4 = v3.writeBytes(3, (byte) '0');
@@ -422,7 +422,7 @@ public class ByteBlobDiffTests {
 	public void test_20() {
 		// conflicting writes (second exact replaces first)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'O');
 		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1', (byte) '0');
 		assertArrayEquals("HELLO World".getBytes(),v2.readAll());
@@ -435,7 +435,7 @@ public class ByteBlobDiffTests {
 	public void test_21() {
 		// conflicting writes (second strictly replaces first)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.writeBytes(2, (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1', (byte) '0');
 		assertArrayEquals("HeLLo World".getBytes(),v2.readAll());
@@ -448,7 +448,7 @@ public class ByteBlobDiffTests {
 	public void test_22() {
 		// conflicting writes (second replaces first lower)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1', (byte) '0');
 		assertArrayEquals("HELLo World".getBytes(),v2.readAll());
@@ -461,7 +461,7 @@ public class ByteBlobDiffTests {
 	public void test_23() {
 		// conflicting writes (second replaces first upper)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.writeBytes(2, (byte) 'L', (byte) 'L', (byte) 'O');
 		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1', (byte) '0');
 		assertArrayEquals("HeLLO World".getBytes(),v2.readAll());
@@ -474,7 +474,7 @@ public class ByteBlobDiffTests {
 	public void test_24() {
 		// conflicting writes (second strictly within first)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'O');
 		Content.Blob v3 = v2.writeBytes(2, (byte) '_', (byte) '1');
 		assertArrayEquals("HELLO World".getBytes(),v2.readAll());
@@ -487,7 +487,7 @@ public class ByteBlobDiffTests {
 	public void test_25() {
 		// conflicting writes (second within first lower)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'O');
 		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1');
 		assertArrayEquals("HELLO World".getBytes(),v2.readAll());
@@ -500,7 +500,7 @@ public class ByteBlobDiffTests {
 	public void test_26() {
 		// conflicting writes (second within first higher)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.writeBytes(1, (byte) 'E', (byte) 'L', (byte) 'L', (byte) 'O');
 		Content.Blob v3 = v2.writeBytes(3, (byte) '1', (byte) '0');
 		assertArrayEquals("HELLO World".getBytes(),v2.readAll());
@@ -513,7 +513,7 @@ public class ByteBlobDiffTests {
 	public void test_27() {
 		// conflicting writes (first increasing second right)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(2, (byte) '1', (byte) '1', (byte) '1');
 		assertArrayEquals("HELLlo World".getBytes(),v2.readAll());
@@ -526,7 +526,7 @@ public class ByteBlobDiffTests {
 	public void test_28() {
 		// conflicting writes (first decreasing second right)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 3, (byte) 'E', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(2, (byte) '1', (byte) '0');
 		assertArrayEquals("HELo World".getBytes(),v2.readAll());
@@ -539,7 +539,7 @@ public class ByteBlobDiffTests {
 	public void test_29() {
 		// conflicting writes (first increasing second left)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(2, 2, (byte) 'L', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1', (byte) '1');
 		assertArrayEquals("HeLLLo World".getBytes(),v2.readAll());
@@ -552,7 +552,7 @@ public class ByteBlobDiffTests {
 	public void test_30() {
 		// conflicting writes (first decreasing second left)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(2, 3, (byte) 'L', (byte) 'O');
 		Content.Blob v3 = v2.writeBytes(1, (byte) '_', (byte) '1');
 		assertArrayEquals("HeLO World".getBytes(),v2.readAll());
@@ -565,7 +565,7 @@ public class ByteBlobDiffTests {
 	public void test_31() {
 		// conflicting writes (exactly replacing first and second)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(5, (byte) '0');
 		Content.Blob v4 = v3.writeBytes(1, (byte) '_',(byte) '1',(byte) '1',(byte) '1',(byte) '0');
@@ -580,7 +580,7 @@ public class ByteBlobDiffTests {
 	public void test_32() {
 		// conflicting writes (strictly replacing first and second)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(5, (byte) 'O');
 		Content.Blob v4 = v3.writeBytes(0, (byte) '#',(byte) '_',(byte) '1',(byte) '1',(byte) '1',(byte) '0',(byte) '_');
@@ -595,7 +595,7 @@ public class ByteBlobDiffTests {
 	public void test_33() {
 		// conflicting writes (partially replace first exactly replace second)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(5, (byte) 'O');
 		Content.Blob v4 = v3.writeBytes(2, (byte) '1',(byte) '1',(byte) '1',(byte) '0');
@@ -610,7 +610,7 @@ public class ByteBlobDiffTests {
 	public void test_34() {
 		// conflicting writes (partially replace first strictly replace second)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(5, (byte) 'O');
 		Content.Blob v4 = v3.writeBytes(2, (byte) '1',(byte) '1',(byte) '1',(byte) '0',(byte) '_');
@@ -625,7 +625,7 @@ public class ByteBlobDiffTests {
 	public void test_35() {
 		// conflicting writes (exactly replace first partially replace second)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(5, (byte) 'O', (byte) '_');
 		Content.Blob v4 = v3.writeBytes(1, (byte) '_',(byte) '1',(byte) '1',(byte) '1',(byte) '0');
@@ -640,7 +640,7 @@ public class ByteBlobDiffTests {
 	public void test_36() {
 		// conflicting writes (strictly replace first partially replace second)
 		byte[] bs1 = "Hello World".getBytes();
-		Content.Blob v1 = new ByteBlob(bs1);
+		Content.Blob v1 = new Byte.Blob(bs1);
 		Content.Blob v2 = v1.replaceBytes(1, 2, (byte) 'E', (byte) 'L', (byte) 'L');
 		Content.Blob v3 = v2.writeBytes(5, (byte) 'O', (byte) '_');
 		Content.Blob v4 = v3.writeBytes(0, (byte) '#',(byte) '_',(byte) '1',(byte) '1',(byte) '1',(byte) '0');
@@ -677,7 +677,7 @@ public class ByteBlobDiffTests {
 	}
 
 	private static void checkMutants(byte[] source, byte[] target, int n) {
-		Content.Blob[] mutants = new Content.Blob[] { new ByteBlob(source) };
+		Content.Blob[] mutants = new Content.Blob[] { new Byte.Blob(source) };
 		//
 		for (int i = 0; i != n; ++i) {
 			mutants = mutate(target, mutants);
@@ -809,7 +809,8 @@ public class ByteBlobDiffTests {
 		final int n = replacements.length;
 		for (String after : permute(before, replacements)) {
 			// Construct corresponding diff
-			Content.Diff diff = ByteBlob.diff(before.getBytes(), after.getBytes());
+			Byte.Replacement[] rs = Byte.diff(before.getBytes(), after.getBytes());
+			Content.Diff diff = new Byte.Diff(new Byte.Blob(before.getBytes()), rs);
 			// Check number of replacements matches
 			assertTrue(diff.count() <= n);
 			// Check replacement matches
