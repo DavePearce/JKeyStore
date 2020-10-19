@@ -30,10 +30,26 @@ public class Byte {
 	 * @return
 	 */
 	public static Replacement[] diff(byte[] before, byte[] after) {
+		return diff(before, 0, before.length, after);
+	}
+
+	/**
+	 * Construct a diff between a (sub)array of bytes and another array using the
+	 * <i>longest common subsequence</i> algorithm. It is assumed that the
+	 * replacement array is overwriting a specified portion of the source array.
+	 *
+	 * @param source The originating source array which is being overwritten.
+	 * @param offset
+	 * @param length
+	 * @param replacement
+	 * @return
+	 */
+	public static Replacement[] diff(byte[] source, int offset, int length, byte[] replacement) {
+		// TODO: can we make this more efficient by reducing number of allocations?
 		// Apply the LCS algorithm
-		int[] mapping = longestCommonSubsequence(before, after);
+		int[] mapping = longestCommonSubsequence(source, offset, length, replacement);
 		// Convert mapping to deltas
-		List<Replacement> deltas = extractDeltas(mapping, after);
+		List<Replacement> deltas = extractDeltas(mapping, replacement, offset);
 		// Contruct final diff.
 		return deltas.toArray(new Replacement[deltas.size()]);
 	}
@@ -66,15 +82,16 @@ public class Byte {
 	 * @param Y The right sequence
 	 * @return The resulting mapping
 	 */
-	private static int[] longestCommonSubsequence(byte[] X, byte[] Y) {
-		final int m = X.length + 1;
+	private static int[] longestCommonSubsequence(byte[] X, int X_offset, int X_length, byte[] Y) {
+		final int m = X_length + 1;
 		final int n = Y.length + 1;
 		final int[] C = new int[m * n];
 		// Calculate the lengths
-		for (int i = 1; i < m; ++i) {
+		int Xi = X_offset;
+		for (int i = 1; i < m; ++i,++Xi) {
 			for (int j = 1; j < n; ++j) {
 				int ij = i + (j * m);
-				if (X[i - 1] == Y[j - 1]) {
+				if (X[Xi] == Y[j - 1]) {
 					C[ij] = C[(i - 1) + ((j - 1) * m)] + 1;
 				} else {
 					final int Cim1j = C[(i - 1) + (j * m)];
@@ -84,7 +101,7 @@ public class Byte {
 			}
 		}
 		// Finally, extract the LCS
-		int[] Z = new int[X.length];
+		int[] Z = new int[X_length];
 		Arrays.fill(Z, -1);
 		extractSubsequence(C, Z, m - 1, n - 1);
 		return Z;
@@ -146,9 +163,11 @@ public class Byte {
 	 *
 	 * @param mapping
 	 * @param after
+	 * @param offset. Indicates the offset within the original array which
+	 *                <code>after</code> is being compared against.
 	 * @return
 	 */
-	private static List<Replacement> extractDeltas(int[] mapping, byte[] after) {
+	private static List<Replacement> extractDeltas(int[] mapping, byte[] after, int offset) {
 		ArrayList<Replacement> deltas = new ArrayList<>();
 		// Initialise after markers
 		int aStart = 0, aPos = 0;
@@ -166,7 +185,7 @@ public class Byte {
 				// Matching case. Flush buffers and advance
 				if (bStart < bPos || aStart < aPos) {
 					byte[] additions = Arrays.copyOfRange(after, aStart, aPos);
-					deltas.add(new Replacement(aStart, bPos - bStart, additions));
+					deltas.add(new Replacement(aStart + offset, bPos - bStart, additions));
 				}
 				aStart = aPos = aPos + 1;
 				bStart = bPos = bPos + 1;
@@ -176,7 +195,7 @@ public class Byte {
 		if (bStart < mapping.length || aStart < after.length) {
 			// Terminating case. Flush buffers and end.
 			byte[] additions = Arrays.copyOfRange(after, aStart, after.length);
-			deltas.add(new Replacement(aStart, mapping.length - bStart, additions));
+			deltas.add(new Replacement(aStart + offset, mapping.length - bStart, additions));
 		}
 		//
 		return deltas;
@@ -258,6 +277,7 @@ public class Byte {
 			// Convert value into bytes
 			byte b1 = (byte) ((value >> 8) & 0xFF);
 			byte b2 = (byte) (value & 0xFF);
+			// TODO: could be more efficient by optimising replacement size.
 			return new Diff(this, new Replacement(offset, 2, b1, b2));
 		}
 
@@ -268,16 +288,19 @@ public class Byte {
 			byte b2 = (byte) ((value >> 16) & 0xFF);
 			byte b3 = (byte) ((value >> 8) & 0xFF);
 			byte b4 = (byte) (value & 0xFF);
+			// TODO: could be more efficient by optimising replacement size.
 			return new Diff(this, new Replacement(offset, 4, b1, b2, b3, b4));
 		}
 
 		@Override
 		public Diff writeBytes(int offset, byte... bytes) {
+			//return new Diff(this, diff(this.bytes, offset, bytes.length, bytes));
 			return new Diff(this, new Replacement(offset, bytes.length, bytes));
 		}
 
 		@Override
 		public Diff replaceBytes(int offset, int length, byte... bytes) {
+			//return new Diff(this, diff(this.bytes, offset, length, bytes));
 			return new Diff(this, new Replacement(offset, length, bytes));
 		}
 
