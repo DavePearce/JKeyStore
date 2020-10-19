@@ -5,7 +5,6 @@ import jledger.core.Content.Blob;
 import jledger.core.Content.Constructor;
 import jledger.util.AbstractLayout;
 import jledger.util.AbstractProxy;
-import jledger.util.ByteBlob;
 
 import static jledger.layouts.Primitive.*;
 
@@ -113,36 +112,5 @@ public class Pair {
 			byte[] bytes = proxy.toBytes();
 			return blob.replaceBytes(offset, 0, bytes);
 		}
-	}
-
-	public static class TestProxy extends Proxy<Integer, Integer, TestProxy> {
-
-		public static final Pair.Layout<Integer, Integer, TestProxy> LAYOUT = new Pair.Layout<Integer, Integer, TestProxy>(
-				INT, INT) {
-			@Override
-			public TestProxy read(Blob blob, int offset) {
-				return new TestProxy(blob, offset);
-			}
-		};
-
-		public TestProxy(Blob blob, int offset) {
-			super(LAYOUT, blob, offset);
-		}
-	}
-
-	public static void main(String[] args) {
-		Content.Blob blob = ByteBlob.EMPTY;
-		// Initialise proxy
-		blob = TestProxy.LAYOUT.initialise(blob, 0, 0, 1);
-		// Access proxy
-		TestProxy tp = TestProxy.LAYOUT.read(blob, 0);
-		//
-		System.out.println("GOT: " + tp.getFirst() + ", " + tp.getSecond());
-		//
-		blob = tp.setFirst(1);
-		//
-		tp = TestProxy.LAYOUT.read(blob, 0);
-		//
-		System.out.println("GOT: " + tp.getFirst() + ", " + tp.getSecond());
 	}
 }

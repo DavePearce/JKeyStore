@@ -11,7 +11,7 @@ import jledger.layouts.Pair;
 import static jledger.layouts.Primitive.BYTE_ARRAY;
 
 import jledger.util.ByteArrayLedger;
-import jledger.util.ByteBlob;
+import jledger.util.Byte;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
@@ -28,12 +28,13 @@ public class BuildServer {
 		Directory d = ledger.last();
 		// Write another one
 		ledger.put(d.addAll(entries));
+		System.out.println("VERSIONS: " + ledger.versions() + ", SIZE: " + ledger);
 	}
 
 	public void update(String name, byte[] contents) {
 		Directory d = ledger.get(ledger.versions() - 1);
 		ledger.put(d.replace(name, contents));
-		System.out.println("VERSIONS: " + ledger.versions() + ", SIZE: " + toSummaryString(ledger.last().getBlob()) + " bytes");
+		System.out.println("VERSIONS: " + ledger.versions() + ", SIZE: " + ledger);
 	}
 
 	public void remove(String name) {
@@ -50,26 +51,11 @@ public class BuildServer {
 		return r;
 	}
 
-	private static String toSummaryString(Content.Blob b) {
-		String r = "";
-		if(b instanceof Content.Diff) {
-			Content.Diff d = (Content.Diff) b;
-			r += toSummaryString(d.parent());
-			int c = 0;
-			for(int i=0;i!=d.count();++i) {
-				c += d.getReplacement(i).bytes().length;
-			}
-			return r + "[" + c + "]";
-		} else {
-			return "[" + b.size() + "]";
-		}
-	}
-
 	private static final class Directory extends Array.Proxy<Entry, Directory> {
 		public static final Array.Layout<Entry, Directory> LAYOUT = Array.LAYOUT(Entry.LAYOUT, Directory::new);
 
 		public Directory() {
-			super(LAYOUT, LAYOUT.initialise(ByteBlob.EMPTY, 0), 0);
+			super(LAYOUT, LAYOUT.initialise(Byte.Blob.EMPTY, 0), 0);
 		}
 
 		public Directory(Content.Blob blob, int offset) {
@@ -119,7 +105,7 @@ public class BuildServer {
 		public static final Pair.Layout<byte[], byte[], Entry> LAYOUT = Pair.LAYOUT(BYTE_ARRAY, BYTE_ARRAY, Entry::new);
 
 		public Entry(byte[] first, byte[] second) {
-			this(LAYOUT.initialise(ByteBlob.EMPTY, 0, first, second), 0);
+			this(LAYOUT.initialise(Byte.Blob.EMPTY, 0, first, second), 0);
 		}
 
 		public Entry(Blob blob, int offset) {

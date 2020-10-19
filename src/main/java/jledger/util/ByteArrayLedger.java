@@ -7,6 +7,8 @@ import jledger.core.Content.Blob;
 import jledger.core.Content.Diff;
 import jledger.core.Ledger;
 import jledger.layouts.Array;
+import jledger.util.Byte.Replacement;
+
 import static jledger.layouts.Primitive.INT;
 
 public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
@@ -76,7 +78,38 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 		// Ensure enough space for transaction
 		ensureVersions(versions + 1);
 		// Record transaction end-point
-		offsets[versions++] = append(blob, offset);
+		offsets[versions] = append(blob, offset);
+		// Increment version number
+		versions = versions + 1;
+	}
+
+	@Override
+	public String toString() {
+		String r = "{";
+		int n = read_i32(bytes,0);
+		for(int i=0;i!=n;++i) {
+			r += Integer.toHexString(bytes[i + 4]);
+		}
+		r += "}";
+		for(int i=1;i<=versions;++i) {
+			r += toTransactionString(i);
+		}
+		return r;
+	}
+
+	private String toTransactionString(int v) {
+		int offset = offsets[v - 1];
+		String r = "{";
+		int m = read_i32(bytes,offset);
+		offset = offset + 4;
+		for(int j=0;j<m;++j) {
+			int o = read_i32(bytes,offset);
+			int s = read_i32(bytes,offset+4);
+			int l = read_i32(bytes,offset+8);
+			r += "<" + o + ";" + s + ";" + l + ">";
+			offset = offset + 12;
+		}
+		return r + "}";
 	}
 
 	private int append(Content.Blob b, int offset) {
@@ -88,7 +121,7 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 				if (pb.parent == this) {
 					if (pb.version == (versions - 1)) {
 						// Store replacement count
-						offset = append(d.count(),offset);
+						offset = append(offset,d.count());
 						// Store replacement headers
 						for (int i = 0; i != d.count(); ++i) {
 							Content.Replacement r = d.getReplacement(i);
@@ -104,24 +137,14 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 						// done;
 						return offset;
 					} else {
-						throw new IllegalArgumentException("non-sequential put");
+						throw new IllegalArgumentException("non-sequential put (" + pb.version + " vs " + versions + ")");
 					}
 				} else {
 					throw new IllegalArgumentException("blob not from this ledger");
 				}
 			}
 		}
-		throw new IllegalArgumentException("invalid blob for ledger");
-	}
-
-	private int append(int offset, byte value) {
-		final int n = offset + 1;
-		// Ensure sufficient capacity
-		ensureCapacity(n);
-		// Copy bytes
-		bytes[offset] = value;
-		// Done
-		return n;
+		throw new IllegalArgumentException("invalid blob for ledger (" + b.getClass().getName() + ")");
 	}
 
 	private int append(int offset, int value) {
@@ -250,47 +273,63 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 
 		@Override
 		public Diff writeByte(int index, byte b) {
-			throw new UnsupportedOperationException();
+			return new Byte.Diff(this, new Replacement(index, 1, b));
 		}
 
 		@Override
-		public Diff writeShort(int index, short i16) {
-			throw new UnsupportedOperationException();
+		public Diff writeShort(int offset, short value) {
+			// Convert value into bytes
+			byte b1 = (byte) ((value >> 8) & 0xFF);
+			byte b2 = (byte) (value & 0xFF);
+			return new Byte.Diff(this, new Replacement(offset, 2, b1, b2));
 		}
 
 		@Override
-		public Diff writeInt(int index, int i32) {
-			throw new UnsupportedOperationException();
+		public Diff writeInt(int offset, int value) {
+			// Convert value into bytes
+			byte b1 = (byte) ((value >> 24) & 0xFF);
+			byte b2 = (byte) ((value >> 16) & 0xFF);
+			byte b3 = (byte) ((value >> 8) & 0xFF);
+			byte b4 = (byte) (value & 0xFF);
+			return new Byte.Diff(this, new Replacement(offset, 4, b1, b2, b3, b4));
 		}
 
 		@Override
-		public Diff writeBytes(int index, byte... bytes) {
-			throw new UnsupportedOperationException();
+		public Diff writeBytes(int offset, byte... bytes) {
+			return new Byte.Diff(this, new Replacement(offset, bytes.length, bytes));
 		}
 
 		@Override
-		public Diff replaceBytes(int index, int length, byte... bytes) {
-			throw new UnsupportedOperationException();
+		public Diff replaceBytes(int offset, int length, byte... bytes) {
+			return new Byte.Diff(this, new Replacement(offset, length, bytes));
 		}
 
 		@Override
-		public Diff insertByte(int index, byte b) {
-			throw new UnsupportedOperationException();
+		public Diff insertByte(int offset, byte b) {
+			return new Byte.Diff(this, new Replacement(offset, 0, b));
 		}
 
 		@Override
-		public Diff insertShort(int index, short i16) {
-			throw new UnsupportedOperationException();
+		public Diff insertShort(int offset, short value) {
+			// Convert value into bytes
+			byte b1 = (byte) ((value >> 8) & 0xFF);
+			byte b2 = (byte) (value & 0xFF);
+			return new Byte.Diff(this, new Replacement(offset, 0, b1, b2));
 		}
 
 		@Override
-		public Diff insertInt(int index, int i32) {
-			throw new UnsupportedOperationException();
+		public Diff insertInt(int offset, int value) {
+			// Convert value into bytes
+			byte b1 = (byte) ((value >> 24) & 0xFF);
+			byte b2 = (byte) ((value >> 16) & 0xFF);
+			byte b3 = (byte) ((value >> 8) & 0xFF);
+			byte b4 = (byte) (value & 0xFF);
+			return new Byte.Diff(this, new Replacement(offset, 0, b1, b2, b3, b4));
 		}
 
 		@Override
-		public Diff insertBytes(int index, byte... bytes) {
-			throw new UnsupportedOperationException();
+		public Diff insertBytes(int offset, byte... bytes) {
+			return new Byte.Diff(this, new Replacement(offset, 0, bytes));
 		}
 
 		@Override
@@ -311,12 +350,13 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 			int size = blob_size(parent,version-1);
 			// Determine replacement count
 			int n = read_i32(parent.bytes,offset);
+			offset = offset + 4;
 			// Apply replacement delta's
 			for(int i=0;i!=n;++i) {
-				int bp = offset + (n * 12);
-				int s = read_i32(parent.bytes, bp + 4);
-				int l = read_i32(parent.bytes, bp + 8);
+				int s = read_i32(parent.bytes, offset + 4);
+				int l = read_i32(parent.bytes, offset + 8);
 				size += (l - s);
+				offset += 12;
 			}
 			return size;
 		}
@@ -325,6 +365,10 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 	private static byte blob_read(int index, ByteArrayLedger<?> parent, int version) {
 		if(version == 0) {
 			// base case
+			int n = read_i32(parent.bytes,0);
+			if(index < 0 || index >= n) {
+				throw new IllegalArgumentException("invalid index (index=" + index + ", version=" + version + ")");
+			}
 			return parent.bytes[index + 4];
 		} else {
 			// TODO: could be more efficient with binary search.
@@ -334,23 +378,25 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 			// Determine replacement count
 			int n = read_i32(parent.bytes,offset);
 			//
+			offset = offset + 4;
+			//
 			int payload = (n * 12) + offset;
 			// Apply replacement delta's
 			for(int i=0;i!=n;++i) {
-				int bp = offset + (n * 12);
-				int o = read_i32(parent.bytes, bp);
-				int s = read_i32(parent.bytes, bp + 4);
-				int l = read_i32(parent.bytes, bp + 8);
+				int o = read_i32(parent.bytes, offset);
+				int s = read_i32(parent.bytes, offset + 4);
+				int l = read_i32(parent.bytes, offset + 8);
 				if(index < o) {
-					return blob_read(index + delta,parent,version);
+					return blob_read(index - delta, parent, version - 1);
 				} else if(index < (o + l)) {
 					return parent.bytes[payload + (index-o)];
 				} else {
 					delta += (l-s);
 					payload += l;
 				}
+				offset += 12;
 			}
-			return blob_read(index + delta,parent,version);
+			return blob_read(index - delta, parent, version - 1);
 		}
 	}
 
