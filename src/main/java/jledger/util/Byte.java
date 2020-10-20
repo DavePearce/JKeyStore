@@ -38,7 +38,7 @@ public class Byte {
 	 * <i>longest common subsequence</i> algorithm. It is assumed that the
 	 * replacement array is overwriting a specified portion of the source array.
 	 *
-	 * @param source The originating source array which is being overwritten.
+	 * @param source      The originating source array which is being overwritten.
 	 * @param offset
 	 * @param length
 	 * @param replacement
@@ -277,13 +277,16 @@ public class Byte {
 			// Convert value into bytes
 			byte b1 = (byte) ((value >> 8) & 0xFF);
 			byte b2 = (byte) (value & 0xFF);
-			// TODO: could be more efficient by optimising replacement size.
+			// FIXME: replacement can be smaller in common cases. For example, when either
+			// first byte is identical, or last byte is.
 			return new Diff(this, new Replacement(offset, 2, b1, b2));
 		}
 
 		@Override
 		public Diff writeInt(int offset, int value) {
 			// Convert value into bytes
+			// FIXME: replacement can be smaller in common cases. For example, when either
+			// first byte is identical, or last byte is.
 			byte b1 = (byte) ((value >> 24) & 0xFF);
 			byte b2 = (byte) ((value >> 16) & 0xFF);
 			byte b3 = (byte) ((value >> 8) & 0xFF);
@@ -294,13 +297,11 @@ public class Byte {
 
 		@Override
 		public Diff writeBytes(int offset, byte... bytes) {
-			//return new Diff(this, diff(this.bytes, offset, bytes.length, bytes));
 			return new Diff(this, new Replacement(offset, bytes.length, bytes));
 		}
 
 		@Override
 		public Diff replaceBytes(int offset, int length, byte... bytes) {
-			//return new Diff(this, diff(this.bytes, offset, length, bytes));
 			return new Diff(this, new Replacement(offset, length, bytes));
 		}
 

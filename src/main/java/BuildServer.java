@@ -7,6 +7,7 @@ import jledger.core.Content;
 import jledger.core.Content.Blob;
 import jledger.layouts.Array;
 import jledger.layouts.Pair;
+import jledger.layouts.Primitive.ByteArray;
 
 import static jledger.layouts.Primitive.BYTE_ARRAY;
 
@@ -75,10 +76,10 @@ public class BuildServer {
 		public Directory replace(String name, byte[] contents) {
 			for (int i = 0; i != length(); ++i) {
 				Entry ith = get(i);
-				String n = new String(ith.getFirst());
+				String n = ith.getName();
 				if (n.equals(name)) {
 					// Match
-					byte[] original = ith.getSecond();
+					byte[] original = ith.getContents();
 					// FIXME: replacing whole contents
 					Content.Blob b = ith.replace(contents);
 					//
@@ -102,10 +103,14 @@ public class BuildServer {
 		}
 	}
 
-	private static final class Entry extends Pair.Proxy<byte[], byte[], Entry> {
-		public static final Pair.Layout<byte[], byte[], Entry> LAYOUT = Pair.LAYOUT(BYTE_ARRAY, BYTE_ARRAY, Entry::new);
+	private static final class Entry extends Pair.Proxy<ByteArray, ByteArray, Entry> {
+		public static final Pair.Layout<ByteArray, ByteArray, Entry> LAYOUT = Pair.LAYOUT(BYTE_ARRAY, BYTE_ARRAY,
+				Entry::new);
 
 		public Entry(byte[] first, byte[] second) {
+			this(new ByteArray(first), new ByteArray(second));
+		}
+		public Entry(ByteArray first, ByteArray second) {
 			this(LAYOUT.initialise(Byte.Blob.EMPTY, 0, first, second), 0);
 		}
 
@@ -113,15 +118,23 @@ public class BuildServer {
 			super(LAYOUT, blob, offset);
 		}
 
+		public String getName() {
+			return new String(getFirst().getAll());
+		}
+
+		public byte[] getContents() {
+			return getSecond().getAll();
+		}
+
 		public Content.Blob replace(byte[] contents) {
-			System.out.println("************************");
-			return setSecond(contents);
+			// FIXME: how do we make this actually efficient!
+			return setSecond(new ByteArray(contents));
 		}
 
 		@Override
 		public String toString() {
-			String f = new String(getFirst());
-			return "\"" + f + "\":" + new String(getSecond()).replace("\n", "\\n");
+			String f = getName();
+			return "\"" + f + "\":" + new String(getContents()).replace("\n", "\\n");
 		}
 	}
 

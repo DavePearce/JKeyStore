@@ -67,7 +67,7 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 
 	@Override
 	public T get(int v) {
-		return layout.read(new Blob<T>(this, v), 0);
+		return layout.read(new Blob<>(this, v), 0);
 	}
 
 	@Override
@@ -225,7 +225,7 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 
 		@Override
 		public byte[] readAll() {
-			throw new UnsupportedOperationException();
+			return blob_readall(parent,version);
 		}
 
 		@Override
@@ -279,6 +279,8 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 		@Override
 		public Diff writeShort(int offset, short value) {
 			// Convert value into bytes
+			// FIXME: replacement can be smaller in common cases. For example, when either
+			// first byte is identical, or last byte is.
 			byte b1 = (byte) ((value >> 8) & 0xFF);
 			byte b2 = (byte) (value & 0xFF);
 			return new Byte.Diff(this, new Replacement(offset, 2, b1, b2));
@@ -287,6 +289,8 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 		@Override
 		public Diff writeInt(int offset, int value) {
 			// Convert value into bytes
+			// FIXME: replacement can be smaller in common cases. For example, when either
+			// first n bytes are identical, or last n bytes.
 			byte b1 = (byte) ((value >> 24) & 0xFF);
 			byte b2 = (byte) ((value >> 16) & 0xFF);
 			byte b3 = (byte) ((value >> 8) & 0xFF);
@@ -360,6 +364,16 @@ public class ByteArrayLedger<T extends Content.Proxy> implements Ledger<T> {
 			}
 			return size;
 		}
+	}
+
+	private static byte[] blob_readall(ByteArrayLedger<?> parent, int version) {
+		// FIXME: highly inefficient
+		int n = blob_size(parent, version);
+		byte[] bytes = new byte[n];
+		for (int i = 0; i != n; ++i) {
+			bytes[i] = blob_read(i, parent, version);
+		}
+		return bytes;
 	}
 
 	private static byte blob_read(int index, ByteArrayLedger<?> parent, int version) {

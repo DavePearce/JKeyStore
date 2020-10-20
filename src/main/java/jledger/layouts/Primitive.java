@@ -2,6 +2,8 @@ package jledger.layouts;
 
 import jledger.core.Content;
 import jledger.core.Content.Blob;
+import jledger.core.Content.Layout;
+import jledger.util.Byte;
 
 public class Primitive {
 
@@ -31,6 +33,73 @@ public class Primitive {
 	 * Describes a dynamically sized array of bytes.
 	 */
 	public static final ByteArrayLayout BYTE_ARRAY = new ByteArrayLayout();
+
+	public static final class ByteArray implements Content.Proxy {
+		private final Content.Blob blob;
+		private final int offset;
+
+		public ByteArray(byte... bytes) {
+			this.blob = Byte.Blob.EMPTY.insertInt(0, bytes.length).insertBytes(4, bytes);
+			this.offset = 0;
+		}
+
+		public ByteArray(Content.Blob blob, int offset) {
+			this.blob = blob;
+			this.offset = offset;
+		}
+
+		@Override
+		public int getOffset() {
+			return offset;
+		}
+
+		@Override
+		public Blob getBlob() {
+			return blob;
+		}
+
+		@Override
+		public Layout<?> getLayout() {
+			return BYTE_ARRAY;
+		}
+
+		public int length() {
+			return blob.readInt(offset);
+		}
+
+		public byte get(int index) {
+			return blob.readByte(offset + 4 + index);
+		}
+
+		public byte[] getAll() {
+			int n = blob.readInt(offset);
+			return blob.readBytes(offset + 4,n);
+		}
+
+		@Override
+		public int sizeOf() {
+			return BYTE_ARRAY.sizeOf(blob, offset);
+		}
+
+		@Override
+		public byte[] toBytes() {
+			int size = BYTE_ARRAY.sizeOf(blob, offset);
+			return blob.readBytes(offset, size);
+		}
+
+		@Override
+		public String toString() {
+			String r = "[";
+			final int n = length();
+			for (int i = 0; i < n; ++i) {
+				if (i != 0) {
+					r += ",";
+				}
+				r += get(i);
+			}
+			return r + "]";
+		}
+	}
 
 	// =======================================================================
 	// Implementations
@@ -90,7 +159,7 @@ public class Primitive {
 		}
 	}
 
-	public static class ByteArrayLayout implements Content.Layout<byte[]> {
+	public static class ByteArrayLayout implements Content.Layout<ByteArray> {
 
 		@Override
 		public int sizeOf(Blob blob, int offset) {
@@ -98,24 +167,21 @@ public class Primitive {
 		}
 
 		@Override
-		public byte[] read(Blob blob, int offset) {
-			final int n = blob.readInt(offset);
-			return blob.readBytes(offset + 4, n);
+		public ByteArray read(Blob blob, int offset) {
+			return new ByteArray(blob, offset);
 		}
 
 		@Override
-		public Blob write(byte[] bytes, Blob blob, int offset) {
-			final int n = blob.readInt(offset);
+		public Blob write(ByteArray arr, Blob blob, int offset) {
+			final byte[] bytes = arr.toBytes();
 			// Replace existing bytes
-			Blob b = blob.replaceBytes(offset + 4, n, bytes);
-			// Update length (if necessary)
-			return (n == bytes.length) ? b : b.writeInt(offset, bytes.length);
+			return blob.replaceBytes(offset, sizeOf(blob, offset), bytes);
 		}
 
 		@Override
-		public Blob insert(byte[] proxy, Blob blob, int offset) {
-			blob = blob.insertInt(offset, proxy.length);
-			return blob.insertBytes(offset + 4, proxy);
+		public Blob insert(ByteArray arr, Blob blob, int offset) {
+			final byte[] bytes = arr.toBytes();
+			return blob.replaceBytes(offset, 0, bytes);
 		}
 	}
 }
